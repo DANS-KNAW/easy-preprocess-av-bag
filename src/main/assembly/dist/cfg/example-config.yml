@@ -1,0 +1,15 @@
+pseudoFileSources:
+  darkarchiveDir: /data/av-migration/darkarchive
+  springfieldDir: /data/av-migration/springfield
+  path: /data/av-migration/sources.csv 
+
+#
+# See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
+#
+logging:
+  level: INFO
+  appenders:
+    - type: file
+      archive: false
+      timeZone: system
+      currentLogFilename: ${HOME}/easy-preprocess-av-bag.log

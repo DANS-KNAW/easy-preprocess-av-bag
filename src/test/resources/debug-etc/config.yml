@@ -1,0 +1,17 @@
+pseudoFileSources:
+  darkarchiveDir: data/darkarchive
+  springfieldDir: data/springfield
+  path: data/sources.csv
+
+#
+# See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
+#
+logging:
+  level: INFO
+  loggers:
+    'nl.knaw.dans': DEBUG
+  appenders:
+    - type: file
+      archive: false
+      logFormat: "%-5p [%d{ISO8601}] [%t] %c: %m%n%rEx"
+      currentLogFilename: data/easy-preprocess-av-bag.log
