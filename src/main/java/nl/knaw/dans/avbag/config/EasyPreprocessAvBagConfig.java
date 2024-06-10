@@ -20,8 +20,11 @@ import io.dropwizard.core.Configuration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.nio.file.Path;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EasyPreprocessAvBagConfig extends Configuration {
   private PseudoFileSourcesConfig pseudoFileSources;
+  private Path stagingDir;
 }

@@ -1,7 +1,9 @@
 pseudoFileSources:
   darkarchiveDir: /data/av-migration/darkarchive
   springfieldDir: /data/av-migration/springfield
-  path: /data/av-migration/sources.csv 
+  path: /data/av-migration/sources.csv
+
+stagingDir: ${HOME}/staging
 
 #
 # See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
