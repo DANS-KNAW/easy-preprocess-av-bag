@@ -23,16 +23,23 @@ public class PlaceHolders {
     private final Document filesXml;
     private final Map<String, Path> identifierToDestMap = new HashMap<>();
 
+    /**
+     * @param bagDir   the directory of the bag
+     * @param filesXml the files.xml document of the bag, which will be modified by removing <dct:source> elements
+     * @throws IOException if the files.xml document cannot be read
+     */
     public PlaceHolders(Path bagDir, Document filesXml) throws IOException {
         this.filesXml = filesXml;
         this.bagDir = bagDir;
         bagParent = bagDir.getParent().getFileName();
-        find(); // side effect: removes <dct:source> elements from filesXml
+        find();
     }
 
     public boolean hasSameFileIds(PseudoFileSources pseudoFileSources) {
         var mappedFileIds = pseudoFileSources.getDarkArchiveFiles(bagParent.toString()).keySet();
         var replacedFileIds = identifierToDestMap.keySet();
+
+        // Find the differences
         Set<String> onlyInMapping = new HashSet<>(mappedFileIds);
         onlyInMapping.removeAll(replacedFileIds);
         Set<String> onlyInReplaced = new HashSet<>(replacedFileIds);
@@ -43,6 +50,7 @@ public class PlaceHolders {
             log.error("Files in PseudoFileSources but not having <dct:source> and length zero: {} {}", bagParent, onlyInMapping);
         if (!onlyInReplaced.isEmpty())
             log.error("Files having <dct:source> and length zero but not in PseudoFileSources: {} {}", bagParent, onlyInReplaced);
+
         return onlyInReplaced.isEmpty() && onlyInMapping.isEmpty();
     }
 

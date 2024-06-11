@@ -24,6 +24,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -48,10 +49,14 @@ public class XmlUtil {
 
     public static void writeFilesXml(Path bagDir, Document filesXml) throws IOException, TransformerException {
         Writer writer = new FileWriter(bagDir.resolve("metadata").resolve("files.xml").toFile());
+        getTransformer().transform(new DOMSource(filesXml), new StreamResult(writer));
+    }
+
+    private static Transformer getTransformer() throws TransformerConfigurationException {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-        transformer.transform(new DOMSource(filesXml), new StreamResult(writer));
+        return transformer;
     }
 
     public static String serializeNode(Node node) {
@@ -64,4 +69,5 @@ public class XmlUtil {
         catch (Exception e) {
             return e.getMessage();
         }
-    }}
+    }
+}
