@@ -93,7 +93,7 @@ public class PseudoFileSources {
     }
 
     private void readCSV(Path filePath) throws IOException {
-        if(!filePath.toFile().isFile()) {
+        if (!filePath.toFile().isFile()) {
             // The parser is not very informative when the file is a directory
             throw new IOException("Does not exist or is not a file: " + filePath);
         }

@@ -25,6 +25,6 @@ import java.nio.file.Path;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EasyPreprocessAvBagConfig extends Configuration {
-  private PseudoFileSourcesConfig pseudoFileSources;
-  private Path stagingDir;
+    private PseudoFileSourcesConfig pseudoFileSources;
+    private Path stagingDir;
 }

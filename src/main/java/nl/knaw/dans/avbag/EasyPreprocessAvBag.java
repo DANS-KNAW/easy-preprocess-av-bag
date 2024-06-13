@@ -16,7 +16,6 @@
 
 package nl.knaw.dans.avbag;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.avbag.config.EasyPreprocessAvBagConfig;
 import nl.knaw.dans.avbag.core.AVConverter;
@@ -26,10 +25,7 @@ import nl.knaw.dans.lib.util.CliVersionProvider;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.Stream;
 
 @Command(name = "easy-preprocess-av-bag",
          mixinStandardHelpOptions = true,

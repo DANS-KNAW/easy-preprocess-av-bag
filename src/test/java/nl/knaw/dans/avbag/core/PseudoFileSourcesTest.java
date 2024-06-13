@@ -21,7 +21,6 @@ import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Set;
 
@@ -31,7 +30,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     @Test
-    public void should_abort_when_dirs_are_omitted() throws IOException {
+    public void should_abort_when_dirs_are_omitted() {
         assertThatThrownBy(() ->
             new PseudoFileSources(new PseudoFileSourcesConfig())
         ).isInstanceOf(IllegalArgumentException.class)
@@ -39,7 +38,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void should_abort_when_dirs_do_not_exist() throws IOException {
+    public void should_abort_when_dirs_do_not_exist() {
         var pseudoFileSources = new PseudoFileSourcesConfig();
         pseudoFileSources.setDarkarchiveDir(testDir.resolve("darkArchiveDir"));
         pseudoFileSources.setSpringfieldDir(testDir.resolve("springfieldDir"));

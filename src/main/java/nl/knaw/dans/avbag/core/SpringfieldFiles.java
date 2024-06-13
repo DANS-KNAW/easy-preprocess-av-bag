@@ -20,7 +20,6 @@ import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,7 +39,7 @@ public class SpringfieldFiles {
     private final Document filesXml;
     private final Map<String, Element> idToElement = new HashMap<>();
 
-    public SpringfieldFiles(Path bagDir, Document filesXml) throws IOException {
+    public SpringfieldFiles(Path bagDir, Document filesXml) {
         this.bagDir = bagDir;
         this.filesXml = filesXml;
         var idElems = filesXml.getElementsByTagName("dct:identifier");

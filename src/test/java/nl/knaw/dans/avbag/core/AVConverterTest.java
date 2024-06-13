@@ -53,9 +53,10 @@ public class AVConverterTest extends AbstractTestWithTestDir {
     }
 
     private void addManifests(ArrayList<Object> manifests, Path convertedBags) throws IOException {
-        Files.walk(convertedBags, 3)
-            .filter(path -> path.getFileName().toString().equals("manifest-sha1.txt"))
-            .forEach(path -> manifests.add(readSorted(path)));
+        try (var files = Files.walk(convertedBags, 3)) {
+            files.filter(path -> path.getFileName().toString().equals("manifest-sha1.txt"))
+                .forEach(path -> manifests.add(readSorted(path)));
+        }
     }
 
     private String readSorted(Path path) {
