@@ -12,6 +12,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -76,9 +77,9 @@ public class AVConverter {
         throws IOException, TransformerException, MaliciousPathException, UnparsableVersionException, UnsupportedAlgorithmException,
         InvalidBagitFileFormatException, NoSuchAlgorithmException, ParserConfigurationException, SAXException {
         var inputBagParentName = inputBagDir.getParent().getFileName().toString();
-        var revision1 = outputDir.resolve(inputBagParentName).resolve(inputBagDir.getFileName());
-        var revision2 = outputDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
-        var revision3 = outputDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
+        var revision1 = stagingDir.resolve(inputBagParentName).resolve(inputBagDir.getFileName());
+        var revision2 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
+        var revision3 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
 
         log.info("Creating revision 1: {} ### {}", inputBagParentName, revision1.getParent().getFileName());
         copyDirectory(inputBagDir.toFile(), revision1.toFile());
@@ -88,7 +89,7 @@ public class AVConverter {
         updateManifests(new BagReader().read(revision1));
 
         log.info("Creating revision 2: {} ### {}", inputBagParentName, revision2.getParent().getFileName());
-        copyDirectory(inputBagDir.toFile(), revision2.toFile());
+        copyDirectory(revision1.toFile(), revision2.toFile());
         var removedFiles = new NoneNoneFiles(revision2).removeNoneNone(filesXml);
         XmlUtil.writeFilesXml(revision2, filesXml);
         removePayloadsFromManifest(removedFiles, updateBagVersion(revision2, revision1));
@@ -96,11 +97,11 @@ public class AVConverter {
         var springFieldFiles = pseudoFileSources.getSpringFieldFiles(inputBagParentName);
         if (!springFieldFiles.isEmpty()) {
             log.info("Creating revision 3: {} ### {}", inputBagParentName, revision3.getParent().getFileName());
-            copyDirectory(inputBagDir.toFile(), revision2.toFile());
+            copyDirectory(revision2.toFile(), revision3.toFile());
             new SpringfieldFiles(revision3, filesXml)
                 .addFiles(springFieldFiles, placeHolders);
-            XmlUtil.writeFilesXml(revision1, filesXml);
-            updateManifests(updateBagVersion(revision3, revision2));
+            XmlUtil.writeFilesXml(revision3, filesXml);
+            updateManifests(updateBagVersion(revision3, revision3));
         }
 
         moveStaged(revision1);
@@ -110,14 +111,15 @@ public class AVConverter {
     }
 
     private void moveStaged(Path bagDir) throws IOException {
-        var parent = bagDir.getParent();
-        FileUtils.moveDirectory(parent.toFile(), outputDir.resolve(parent).toFile());
+        var source = bagDir.getParent();
+        var destination = outputDir.resolve(source.getFileName());
+        FileUtils.moveDirectory(source.toFile(), destination.toFile());
     }
 
     private static void replacePayloadFile(Path bagDir, Path source, String destination) throws IOException {
         FileUtils.copyFile(
             source.toFile(),
-            bagDir.relativize(Path.of(destination)).toFile(),
+            bagDir.resolve(destination).toFile(),
             true, REPLACE_EXISTING, COPY_ATTRIBUTES
         );
     }

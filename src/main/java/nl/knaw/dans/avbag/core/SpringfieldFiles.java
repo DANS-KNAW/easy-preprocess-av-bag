@@ -74,7 +74,7 @@ public class SpringfieldFiles {
         var destination = removeExtension(placeHolder) + newExtension;
         FileUtils.copyFile(
             source.toFile(),
-            bagDir.relativize(Path.of(destination)).toFile(),
+            bagDir.resolve(destination).toFile(),
             true,
             COPY_ATTRIBUTES
         );
