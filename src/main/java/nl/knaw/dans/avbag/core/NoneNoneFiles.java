@@ -45,7 +45,7 @@ public class NoneNoneFiles {
                 fileElement.getParentNode().removeChild(fileElement);
                 var file = bagDir.resolve(filepath).toFile();
                 if (!file.delete()) {
-                    throw new IOException("Could not delete " + file);
+                    throw new IOException("%s Could not delete %s".formatted(bagDir.getParent().getFileName(), file));
                 }
                 // Since we're modifying the list we're iterating over, decrement i to adjust for the next iteration.
                 i--;

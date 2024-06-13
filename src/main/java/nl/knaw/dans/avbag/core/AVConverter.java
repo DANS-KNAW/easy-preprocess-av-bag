@@ -71,8 +71,9 @@ public class AVConverter {
     }
 
     private void convertOne(Path bag) {
-        if (outputDir.resolve(bag.getParent().getFileName()).toFile().exists()) {
-            log.error("{} skipped, it exists in {}", bag.getFileName(), outputDir);
+        var bagParent = bag.getParent().getFileName();
+        if (outputDir.resolve(bagParent).toFile().exists()) {
+            log.error("{} skipped, it exists in {}", bagParent, outputDir);
             return;
         }
         try {
@@ -83,7 +84,9 @@ public class AVConverter {
             }
         }
         catch (Exception e) {
-            log.error(bag.getParent().toString() + "failed, it may or may not have (incomplete) bags in " + stagingDir, e);
+            log.error("%s failed, it may or may not have (incomplete) bags in %s"
+                .formatted(bag.getParent().toString(), stagingDir), e
+            );
         }
     }
 
