@@ -16,12 +16,20 @@
 
 package nl.knaw.dans.avbag;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.avbag.config.EasyPreprocessAvBagConfig;
+import nl.knaw.dans.avbag.core.AVConverter;
+import nl.knaw.dans.avbag.core.PseudoFileSources;
 import nl.knaw.dans.lib.util.AbstractCommandLineApp;
 import nl.knaw.dans.lib.util.CliVersionProvider;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
 
 @Command(name = "easy-preprocess-av-bag",
          mixinStandardHelpOptions = true,
@@ -29,6 +37,8 @@ import picocli.CommandLine.Command;
          description = "Preprocesses a bag exported by easy-fedora-to-bag which contains AV materials")
 @Slf4j
 public class EasyPreprocessAvBag extends AbstractCommandLineApp<EasyPreprocessAvBagConfig> {
+    private EasyPreprocessAvBagConfig config;
+
     public static void main(String[] args) throws Exception {
         new EasyPreprocessAvBag().run(args);
     }
@@ -37,9 +47,34 @@ public class EasyPreprocessAvBag extends AbstractCommandLineApp<EasyPreprocessAv
         return "Preprocesses a bag exported by easy-fedora-to-bag which contains AV materials";
     }
 
+    @CommandLine.Parameters(index = "0",
+                            paramLabel = "INPUT_DIR",
+                            description = "The directory containing the AV dataset.")
+    private Path inputDir;
+
+    @CommandLine.Parameters(index = "2",
+                            paramLabel = "OUTPUT_DIR",
+                            description = "The directory where the converted dataset will be stored.")
+    private Path outputDir;
+
     @Override
     public void configureCommandLine(CommandLine commandLine, EasyPreprocessAvBagConfig config) {
+        this.config = config;
         log.debug("Configuring command line");
-        // TODO: add options and subcommands
+    }
+
+    @Override
+    public Integer call() {
+        try {
+            var pseudoFileSources = new PseudoFileSources(config.getPseudoFileSources());
+            new AVConverter(inputDir, outputDir, config.getStagingDir(), pseudoFileSources)
+                .convertAll();
+            return 0;
+
+        }
+        catch (Exception e) {
+            log.error("Conversion aborted", e);
+            return 1;
+        }
     }
 }
