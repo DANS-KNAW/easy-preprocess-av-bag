@@ -28,7 +28,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Files.writeString;
+import static nl.knaw.dans.avbag.TestUtils.assumeNotYetFixed;
 import static nl.knaw.dans.avbag.TestUtils.captureLog;
 import static nl.knaw.dans.avbag.TestUtils.captureStdout;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AVConverterTest extends AbstractTestWithTestDir {
 
     @Test
-    public void integration() throws Exception {
+    public void integration_should_be_happy() throws Exception {
         var stdout = captureStdout();
         captureLog(Level.INFO, "nl.knaw.dans.avbag");
 
@@ -61,13 +63,50 @@ public class AVConverterTest extends AbstractTestWithTestDir {
 
         // all manifest-sha1.txt files should be unique
         var manifests = new ArrayList<>();
-        addManifests(manifests, inputBags);
-        addManifests(manifests, convertedBags);
+        collectManifests(manifests, inputBags);
+        collectManifests(manifests, convertedBags);
         assertThat(new HashSet<>(manifests))
             .containsExactlyInAnyOrderElementsOf(manifests);
     }
 
-    private void addManifests(ArrayList<Object> manifests, Path convertedBags) throws IOException {
+    @Test
+    public void integration_should_not_create_empty_bags_because_of_missing_rights() throws Exception {
+        assumeNotYetFixed("What is the difference with ignored SpringfieldFilesTest?");
+        var stdout = captureStdout();
+        captureLog(Level.INFO, "nl.knaw.dans.avbag");
+
+        var integration = Path.of("src/test/resources/integration");
+        var inputBags = integration.resolve("input-bags");
+        var mutableInput = testDir.resolve("input-bags");
+        var convertedBags = createDirectories(testDir.resolve("converted-bags"));
+        var stagedBags = createDirectories(testDir.resolve("staged-bags"));
+
+        FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
+
+        // remove all rights elements from one of the files.xml files
+        var bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
+        var filesXmlFile = mutableInput.resolve(bagParent + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
+        var xmlLines = readAllLines(filesXmlFile).stream()
+            .filter(line -> !line.contains("ToRights"))
+            .toList();
+        writeString(filesXmlFile, String.join("\n", xmlLines));
+
+        var pseudoFileSources = new PseudoFileSourcesConfig();
+        pseudoFileSources.setDarkarchiveDir(integration.resolve("av-dir"));
+        pseudoFileSources.setSpringfieldDir(integration.resolve("springfield-dir"));
+        pseudoFileSources.setPath(integration.resolve("mapping.csv"));
+
+        new AVConverter(mutableInput, convertedBags, stagedBags, new PseudoFileSources(pseudoFileSources))
+            .convertAll();
+
+        writeString(testDir.resolve("log.txt"), stdout.toString());
+
+        var manifests = new ArrayList<>();
+        collectManifests(manifests, convertedBags);
+        assertThat(new HashSet<>(manifests)).doesNotContain("");
+    }
+
+    private void collectManifests(ArrayList<Object> manifests, Path convertedBags) throws IOException {
         try (var files = Files.walk(convertedBags, 3)) {
             files.filter(path -> path.getFileName().toString().equals("manifest-sha1.txt"))
                 .forEach(path -> manifests.add(readSorted(path)));

@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 // copied from dans-layer-store-lib which is a matured version of dd-manage-deposit
 public class TestUtils {
 
@@ -40,5 +42,14 @@ public class TestUtils {
         logger.setLevel(debug);
         logger.addAppender(listAppender);
         return listAppender;
+    }
+
+    /**
+     * Assume that a bug is not yet fixed. This allows to execute as much of a test as possible to show code coverage, without creating false positives or false negatives.
+     *
+     * @param message the message to display
+     */
+    public static void assumeNotYetFixed(String message) {
+        assumeTrue(false, message);
     }
 }

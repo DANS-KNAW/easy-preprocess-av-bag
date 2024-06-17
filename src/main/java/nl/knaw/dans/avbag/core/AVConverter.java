@@ -125,6 +125,7 @@ public class AVConverter {
         moveStaged(revision2);
         moveStaged(revision3);
         FileUtils.deleteDirectory(inputBagDir.getParent().toFile());
+        log.info("Finished {} ## {} ## {}", revision1.getParent().getFileName(), revision2.getParent().getFileName(), springFieldFiles.isEmpty() ? "" : revision3.getParent().getFileName());
     }
 
     private void moveStaged(Path bagDir) throws IOException {

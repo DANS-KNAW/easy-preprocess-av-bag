@@ -52,9 +52,16 @@ public class SpringfieldFiles {
     public void addFiles(Map<String, Path> springFieldFiles, PlaceHolders placeHolders) throws IOException {
         List<Node> newFileList = new ArrayList<>();
         for (var entry : springFieldFiles.entrySet()) {
-            var added = addPayloadFile(entry.getValue(), placeHolders.getDestPath(entry.getKey()));
-            var newFileElement = newFileElement(added, idToElement.get(entry.getKey()));
-            newFileList.add(newFileElement);
+            var oldFileElement = idToElement.get(entry.getKey());
+            if (oldFileElement == null) {
+                // should have been detected by PseudoFileSources
+                log.error("{} Could not find {} in files.xml", bagDir.getParent().getFileName(), entry.getKey());
+            }
+            else {
+                var added = addPayloadFile(entry.getValue(), placeHolders.getDestPath(entry.getKey()));
+                var newFileElement = newFileElement(added, oldFileElement);
+                newFileList.add(newFileElement);
+            }
         }
         // separate loops to not interfere prematurely
         for (Node newFile : newFileList) {
@@ -81,10 +88,6 @@ public class SpringfieldFiles {
     }
 
     private Element newFileElement(String addedFilePath, Element oldFileElement) {
-        if (oldFileElement == null) {
-            log.error("{} No file element found for: {}", bagDir.getParent().getFileName(), addedFilePath);
-            return null;
-        }
         var newElement = filesXml.createElement("file");
         newElement.setAttribute("filepath", addedFilePath);
         newElement.appendChild(newRightsElement("accessibleToRights", oldFileElement));
