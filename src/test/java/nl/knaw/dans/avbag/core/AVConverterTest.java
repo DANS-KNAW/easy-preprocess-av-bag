@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -35,7 +36,9 @@ import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Files.writeString;
 import static nl.knaw.dans.avbag.TestUtils.captureLog;
 import static nl.knaw.dans.avbag.TestUtils.captureStdout;
+import static org.apache.commons.io.file.PathUtils.touch;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AVConverterTest extends AbstractTestWithTestDir {
     Path integration = Path.of("src/test/resources/integration");
@@ -55,6 +58,41 @@ public class AVConverterTest extends AbstractTestWithTestDir {
         createDirectories(mutableInput);
         createDirectories(convertedBags);
         createDirectories(stagedBags);
+    }
+
+    @Test
+    public void integration_should_complain_about_not_existing_staging() throws Exception {
+        FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
+        FileUtils.deleteDirectory(stagedBags.toFile());
+
+        assertThatThrownBy(() -> new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll())
+            .isInstanceOf(NoSuchFileException.class)
+            .hasMessage("target/test/AVConverterTest/staged-bags");
+    }
+
+    @Test
+    public void integration_should_complain_about_content_in_staging() throws Exception {
+        FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
+        touch(stagedBags.resolve("some-file"));
+
+        assertThatThrownBy(() -> new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll())
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("The staging directory is not empty. Please empty the directory and try again.");
+    }
+
+    @Test
+    public void integration_should_complain_about_already_converted_bag() throws Exception {
+        FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
+        var uuid = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
+        touch(convertedBags.resolve(uuid));
+
+        captureStdout();
+        var log = captureLog(Level.INFO, "nl.knaw.dans.avbag");
+
+        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
+
+        assertThat(log.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
+            .contains(uuid + " skipped, it exists in " + convertedBags);
     }
 
     @Test

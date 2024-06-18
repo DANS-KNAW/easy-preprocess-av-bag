@@ -15,7 +15,9 @@
  */
 package nl.knaw.dans.avbag.core;
 
+import ch.qos.logback.classic.Level;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
+import nl.knaw.dans.avbag.TestUtils;
 import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
 import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,7 @@ import java.nio.file.Path;
 import java.util.Set;
 
 import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.writeString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
@@ -96,6 +99,52 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
         ).isInstanceOf(IOException.class)
             .hasMessageStartingWith("Not existing files: [target/test/PseudoFileSourcesTest/springfieldDir/domain/dans/user/nini/video/12/rawvideo/2/NH173.mp4")
             .hasMessageEndingWith("darkArchiveDir/993ec2ee-b716-45c6-b9d1-7190f98a200a/bag/data/JKKV_JBohnen_IV-verklaring_schenkingsovereenkomst_NIOD.pdf]");
+    }
+
+    @Test
+    public void should_warn_empty_av_column() throws IOException {
+        var pseudoFileSources = new PseudoFileSourcesConfig();
+        var springfieldDir = "src/test/resources/integration/springfield-dir";
+        pseudoFileSources.setSpringfieldDir(Path.of(springfieldDir));
+        pseudoFileSources.setDarkarchiveDir(Path.of("src/test/resources/integration/av-dir"));
+        var csv = testDir.resolve("mapping.csv");
+        createDirectories(testDir);
+        writeString(csv, """
+            easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir
+            easy-file:7296382,easy-dataset:112582,,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,""");
+
+        TestUtils.captureStdout();
+        var log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
+
+        pseudoFileSources.setPath(csv);
+
+        new PseudoFileSources(pseudoFileSources);
+
+        assertThat(log.list.get(0).getFormattedMessage())
+            .startsWith("No value in column path_in_AV_dir and/or easy_file_id: CSVRecord [comment='null', recordNumber=1, values=[easy-file:7296382, easy-dataset:112582, , eaa33307");
+    }
+
+    @Test
+    public void should_warn_empty_file_id_column() throws IOException {
+        var pseudoFileSources = new PseudoFileSourcesConfig();
+        var springfieldDir = "src/test/resources/integration/springfield-dir";
+        pseudoFileSources.setSpringfieldDir(Path.of(springfieldDir));
+        pseudoFileSources.setDarkarchiveDir(Path.of("src/test/resources/integration/av-dir"));
+        var csv = testDir.resolve("mapping.csv");
+        createDirectories(testDir);
+        writeString(csv, """
+            easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir
+            ,easy-dataset:112582,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,""");
+
+        TestUtils.captureStdout();
+        var log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
+
+        pseudoFileSources.setPath(csv);
+
+        new PseudoFileSources(pseudoFileSources);
+
+        assertThat(log.list.get(0).getFormattedMessage())
+            .startsWith("No value in column path_in_AV_dir and/or easy_file_id: CSVRecord [comment='null', recordNumber=1, values=[, easy-dataset:112582, eaa33307");
     }
 
     @Test
