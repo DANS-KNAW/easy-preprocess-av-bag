@@ -20,6 +20,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
 import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,9 @@ public class AVConverterTest extends AbstractTestWithTestDir {
     Path convertedBags = testDir.resolve("converted-bags");
     Path stagedBags = testDir.resolve("staged-bags");
 
-    public AVConverterTest() throws IOException {
+    @BeforeAll
+    public static void beforeAll() {
+        System.setProperty("logback.configurationFile", "logback-test.xml");
     }
 
     @BeforeEach
