@@ -37,31 +37,36 @@ public class SpringfieldFiles {
 
     private final Path bagDir;
     private final Document filesXml;
+    private final Map<String, Path> springfieldFiles;
     private final Map<String, Element> idToElement = new HashMap<>();
 
-    public SpringfieldFiles(Path bagDir, Document filesXml) {
+    public SpringfieldFiles(Path bagDir, Document filesXml, Map<String, Path> springfieldFiles) {
         this.bagDir = bagDir;
         this.filesXml = filesXml;
+        this.springfieldFiles = springfieldFiles;
         var idElems = filesXml.getElementsByTagName("dct:identifier");
         for (int i = 0; i < idElems.getLength(); i++) {
             var idElem = (Element) idElems.item(i);
-            idToElement.put(idElem.getTextContent(), (Element) idElem.getParentNode());
+            if (springfieldFiles.containsKey(idElem.getTextContent())) {
+                idToElement.put(idElem.getTextContent(), (Element) idElem.getParentNode());
+            }
+        }
+        if (idToElement.size() != springfieldFiles.size()) {
+            log.warn(bagDir.getParent().getFileName() + " Not all springfield files in the mapping are present in the second bag");
         }
     }
 
-    public void addFiles(Map<String, Path> springFieldFiles, PlaceHolders placeHolders) throws IOException {
+    public boolean hasFilesToAdd() {
+        return !idToElement.isEmpty();
+    }
+
+    public void addFiles(PlaceHolders placeHolders) throws IOException {
         List<Node> newFileList = new ArrayList<>();
-        for (var entry : springFieldFiles.entrySet()) {
-            var oldFileElement = idToElement.get(entry.getKey());
-            if (oldFileElement == null) {
-                // should have been detected by PseudoFileSources
-                log.error("{} Could not find {} in files.xml", bagDir.getParent().getFileName(), entry.getKey());
-            }
-            else {
-                var added = addPayloadFile(entry.getValue(), placeHolders.getDestPath(entry.getKey()));
-                var newFileElement = newFileElement(added, oldFileElement);
-                newFileList.add(newFileElement);
-            }
+        for (var entry : idToElement.entrySet()) {
+            var fileId = entry.getKey();
+            var added = addPayloadFile(springfieldFiles.get(fileId), placeHolders.getDestPath(fileId));
+            var newFileElement = newFileElement(added, entry.getValue());
+            newFileList.add(newFileElement);
         }
         // separate loops to not interfere prematurely
         for (Node newFile : newFileList) {

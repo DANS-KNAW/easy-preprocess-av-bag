@@ -85,7 +85,7 @@ public class AVConverter {
         }
         catch (Exception e) {
             log.error("%s failed, it may or may not have (incomplete) bags in %s"
-                .formatted(bag.getParent().toString(), stagingDir), e
+                .formatted(bag.getParent().getFileName(), stagingDir), e
             );
         }
     }
@@ -111,21 +111,28 @@ public class AVConverter {
         XmlUtil.writeFilesXml(revision2, filesXml);
         removePayloadsFromManifest(removedFiles, updateBagVersion(revision2, revision1));
 
-        var springFieldFiles = pseudoFileSources.getSpringFieldFiles(inputBagParentName);
-        if (!springFieldFiles.isEmpty()) {
+        var springfieldFiles = new SpringfieldFiles(revision3, filesXml, pseudoFileSources.getSpringFieldFiles(inputBagParentName));
+        if (springfieldFiles.hasFilesToAdd()) {
             log.info("Creating revision 3: {} ### {}", inputBagParentName, revision3.getParent().getFileName());
             copyDirectory(revision2.toFile(), revision3.toFile());
-            new SpringfieldFiles(revision3, filesXml)
-                .addFiles(springFieldFiles, placeHolders);
+            springfieldFiles.addFiles(placeHolders);
             XmlUtil.writeFilesXml(revision3, filesXml);
             updateManifests(updateBagVersion(revision3, revision3));
         }
 
         moveStaged(revision1);
         moveStaged(revision2);
-        moveStaged(revision3);
+        if (springfieldFiles.hasFilesToAdd()) {
+            moveStaged(revision3);
+        }
         FileUtils.deleteDirectory(inputBagDir.getParent().toFile());
-        log.info("Finished {} ## {} ## {}", revision1.getParent().getFileName(), revision2.getParent().getFileName(), springFieldFiles.isEmpty() ? "" : revision3.getParent().getFileName());
+        log.info("Finished {} ## {} ## {}",
+            revision1.getParent().getFileName(),
+            revision2.getParent().getFileName(),
+            springfieldFiles.hasFilesToAdd()
+                ? revision3.getParent().getFileName()
+                : ""
+        );
     }
 
     private void moveStaged(Path bagDir) throws IOException {

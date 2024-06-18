@@ -16,9 +16,11 @@
 package nl.knaw.dans.avbag.core;
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
 import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -30,34 +32,40 @@ import java.util.HashSet;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Files.writeString;
-import static nl.knaw.dans.avbag.TestUtils.assumeNotYetFixed;
 import static nl.knaw.dans.avbag.TestUtils.captureLog;
 import static nl.knaw.dans.avbag.TestUtils.captureStdout;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AVConverterTest extends AbstractTestWithTestDir {
+    Path integration = Path.of("src/test/resources/integration");
+    Path inputBags = integration.resolve("input-bags");
+    Path mutableInput = testDir.resolve("input-bags");
+    Path convertedBags = testDir.resolve("converted-bags");
+    Path stagedBags = testDir.resolve("staged-bags");
+
+    public AVConverterTest() throws IOException {
+    }
+
+    @BeforeEach
+    public void setup() throws Exception {
+        super.setUp();
+        createDirectories(mutableInput);
+        createDirectories(convertedBags);
+        createDirectories(stagedBags);
+    }
 
     @Test
     public void integration_should_be_happy() throws Exception {
         var stdout = captureStdout();
         captureLog(Level.INFO, "nl.knaw.dans.avbag");
 
-        var integration = Path.of("src/test/resources/integration");
-        var inputBags = integration.resolve("input-bags");
-        var mutableInput = testDir.resolve("input-bags");
-        var convertedBags = createDirectories(testDir.resolve("converted-bags"));
-        var stagedBags = createDirectories(testDir.resolve("staged-bags"));
-
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        pseudoFileSources.setDarkarchiveDir(integration.resolve("av-dir"));
-        pseudoFileSources.setSpringfieldDir(integration.resolve("springfield-dir"));
-        pseudoFileSources.setPath(integration.resolve("mapping.csv"));
 
-        new AVConverter(mutableInput, convertedBags, stagedBags, new PseudoFileSources(pseudoFileSources))
+        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources())
             .convertAll();
 
         writeString(testDir.resolve("log.txt"), stdout.toString());
+
         assertThat(mutableInput).isEmptyDirectory();
         assertThat(stagedBags).isEmptyDirectory();
 
@@ -70,40 +78,79 @@ public class AVConverterTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void integration_should_not_create_empty_bags_because_of_missing_rights() throws Exception {
-        assumeNotYetFixed("What is the difference with ignored SpringfieldFilesTest?");
+    public void integration_should_have_an_empty_second_bag_with_all_files_none_none() throws Exception {
         var stdout = captureStdout();
-        captureLog(Level.INFO, "nl.knaw.dans.avbag");
+        var log = captureLog(Level.INFO, "nl.knaw.dans.avbag");
 
-        var integration = Path.of("src/test/resources/integration");
-        var inputBags = integration.resolve("input-bags");
-        var mutableInput = testDir.resolve("input-bags");
-        var convertedBags = createDirectories(testDir.resolve("converted-bags"));
-        var stagedBags = createDirectories(testDir.resolve("staged-bags"));
-
-        FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
-
-        // remove all rights elements from one of the files.xml files
         var bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
+
+        FileUtils.copyDirectory(
+            integration.resolve("input-bags").resolve(bagParent).toFile(),
+            mutableInput.resolve(bagParent).toFile()
+        );
+
+        // removing all rights elements from files.xml defaults to None/None
         var filesXmlFile = mutableInput.resolve(bagParent + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
         var xmlLines = readAllLines(filesXmlFile).stream()
             .filter(line -> !line.contains("ToRights"))
             .toList();
         writeString(filesXmlFile, String.join("\n", xmlLines));
 
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        pseudoFileSources.setDarkarchiveDir(integration.resolve("av-dir"));
-        pseudoFileSources.setSpringfieldDir(integration.resolve("springfield-dir"));
-        pseudoFileSources.setPath(integration.resolve("mapping.csv"));
+        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources())
+            .convertAll();
 
-        new AVConverter(mutableInput, convertedBags, stagedBags, new PseudoFileSources(pseudoFileSources))
+        writeString(testDir.resolve("log.txt"), stdout.toString());
+        var logLines = log.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
+
+        // no third bag logged
+        var last = log.list.get(logLines.size() - 1);
+        assertThat(last.getFormattedMessage()).endsWith("## ");
+        assertThat(last.getLevel()).isEqualTo(Level.INFO);
+
+        var warning = log.list.get(logLines.size() - 2);
+        assertThat(warning.getMessage()).endsWith("Not all springfield files in the mapping are present in the second bag");
+        assertThat(warning.getLevel()).isEqualTo(Level.WARN);
+    }
+
+    @Test
+    public void integration_should_fail_because_of_not_expected_exception() throws Exception {
+        var stdout = captureStdout();
+        var log = captureLog(Level.INFO, "nl.knaw.dans.avbag");
+
+        var bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
+
+        FileUtils.copyDirectory(
+            integration.resolve("input-bags").resolve(bagParent).toFile(),
+            mutableInput.resolve(bagParent).toFile()
+        );
+
+        // remove all rights elements from one of the files.xml files
+        var filesXmlFile = mutableInput.resolve(bagParent + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
+        var xmlLines = readAllLines(filesXmlFile).stream()
+            .filter(line -> !line.contains("visibleToRights"))
+            .toList();
+        writeString(filesXmlFile, String.join("\n", xmlLines));
+
+        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources())
             .convertAll();
 
         writeString(testDir.resolve("log.txt"), stdout.toString());
 
-        var manifests = new ArrayList<>();
-        collectManifests(manifests, convertedBags);
-        assertThat(new HashSet<>(manifests)).doesNotContain("");
+        // failure report in logging because there is no visibleToRights element for the added springfield file
+        var lastLoggingEvent = log.list.get(log.list.size() - 1);
+        assertThat(lastLoggingEvent.getMessage())
+            .isEqualTo(bagParent + " failed, it may or may not have (incomplete) bags in " + stagedBags);
+        assertThat(lastLoggingEvent.getThrowableProxy().getMessage())
+            .isEqualTo("""
+                Cannot invoke "org.w3c.dom.Element.getTagName()" because "oldRights" is null""");
+    }
+
+    private PseudoFileSources getPseudoFileSources() throws IOException {
+        var pseudoFileSourcesConfig = new PseudoFileSourcesConfig();
+        pseudoFileSourcesConfig.setDarkarchiveDir(integration.resolve("av-dir"));
+        pseudoFileSourcesConfig.setSpringfieldDir(integration.resolve("springfield-dir"));
+        pseudoFileSourcesConfig.setPath(integration.resolve("mapping.csv"));
+        return new PseudoFileSources(pseudoFileSourcesConfig);
     }
 
     private void collectManifests(ArrayList<Object> manifests, Path convertedBags) throws IOException {
