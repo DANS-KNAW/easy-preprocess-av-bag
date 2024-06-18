@@ -20,9 +20,11 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
 import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +36,7 @@ import java.util.HashSet;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Files.writeString;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static nl.knaw.dans.avbag.TestUtils.captureLog;
 import static nl.knaw.dans.avbag.TestUtils.captureStdout;
 import static org.apache.commons.io.file.PathUtils.touch;
@@ -58,6 +61,16 @@ public class AVConverterTest extends AbstractTestWithTestDir {
         createDirectories(mutableInput);
         createDirectories(convertedBags);
         createDirectories(stagedBags);
+    }
+
+    @AfterEach
+    public void persistLog(TestInfo testInfo) throws Exception {
+        String testName = testInfo.getDisplayName().replace("()", "");
+        var logFile = testDir.resolve("log.txt");
+        if(logFile.toFile().exists()) {
+            var savedLog = testDir.getParent().resolve(testDir.getFileName() + "_" + testName + ".log");
+            Files.move(logFile, savedLog, REPLACE_EXISTING); // TODO remove in beforeEach
+        }
     }
 
     @Test
