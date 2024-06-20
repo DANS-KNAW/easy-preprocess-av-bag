@@ -78,7 +78,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @BeforeEach
-    public void prepareReport() throws Exception {
+    public void prepareReport() {
         stdout = captureStdout();
         loggedEvents = captureLog(Level.INFO, "nl.knaw.dans.avbag");
     }
@@ -105,7 +105,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void should_complain_about_not_existing_staging() throws Exception {
+    public void complains_about_not_existing_staging() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         deleteDirectory(stagedBags.toFile());
 
@@ -115,7 +115,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void should_complain_about_content_in_staging() throws Exception {
+    public void complains_about_content_in_staging() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         touch(stagedBags.resolve("some-file"));
 
@@ -125,7 +125,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void should_complain_about_already_converted_bag() throws Exception {
+    public void complains_about_already_converted_bag() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         var uuid = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
         touch(convertedBags.resolve(uuid));
@@ -137,7 +137,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void should_be_happy() throws Exception {
+    public void is_happy() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
 
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
@@ -154,7 +154,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void should_have_an_empty_second_bag_with_all_files_none_none() throws Exception {
+    public void creates_an_empty_second_bag_with_all_files_none_none() throws Exception {
         var bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
 
         FileUtils.copyDirectory(
@@ -184,7 +184,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void should_report_failing_bags_because_of_not_expected_exception() throws Exception {
+    public void reports_failing_bags_because_of_not_expected_exception() throws Exception {
 
         FileUtils.copyDirectory(
             integration.resolve("input-bags").toFile(),
