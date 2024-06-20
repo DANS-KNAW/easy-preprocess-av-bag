@@ -191,7 +191,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
             mutableInput.toFile()
         );
 
-        // second bag fails when a none/none without dct:source does not exist
+        // second bag will fail when a none/none without dct:source does not exist
 
         var bagParent2 = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
         FileUtils.delete(mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/data/original/bijlage Gb interviewer 08.pdf").toFile());
@@ -201,7 +201,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
             .toList();
         writeString(filesXmlFile2, String.join("\n", xmlLines2));
 
-        // third bag fails when visibleToRights is missing for a springfield file
+        // third bag will fail when visibleToRights is missing for a springfield file
 
         var bagParent3 = "993ec2ee-b716-45c6-b9d1-7190f98a200a";
         var filesXmlFile3 = mutableInput.resolve(bagParent3 + "/e50fe0a3-554e-49a4-98f8-f4a32f19def9/metadata/files.xml");
@@ -214,16 +214,25 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
-        // assert failure of second bag
+        // assert which bags succeeded
+
+        assertHasLogMessageStartingWith("Finished eaa");
+        assertHasLogMessageStartingWith("Finished 89e");
+        assertHasLogMessageStartingWith("Finished 54c");
+        assertNoLogMessageStartingWith("Finished: " + bagParent2);
+        assertNoLogMessageStartingWith("Finished " + bagParent3);
+
+        // assert failure on second bag
 
         assertHasLogMessageStartingWith("Creating revision 2: " + bagParent2);
+        assertNoLogMessageStartingWith("Creating revision 3: " + bagParent2);
         var bagEvent2 = getThrowableProxyWithLogMessageEqualTo(format(
             "{0} failed, it may or may not have (incomplete) bags in {1}", bagParent2, stagedBags
         ));
         assertThat(bagEvent2.getClassName()).isEqualTo(IOException.class.getCanonicalName());
         assertThat(bagEvent2.getMessage()).endsWith("interviewer 08.pdf");
 
-        // assert failure of third bag
+        // assert failure on third bag
 
         assertHasLogMessageStartingWith("Creating revision 3: " + bagParent3);
         var bagEvent3 = getThrowableProxyWithLogMessageEqualTo(format(
@@ -251,7 +260,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
             .map(ILoggingEvent::getFormattedMessage)
             .anyMatch(s -> s.startsWith(msg));
 
-        if (!hasMessage) {
+        if (hasMessage) {
             throw new AssertionError("Should not have found a log message found starting with: " + msg);
         }
     }
