@@ -75,12 +75,16 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         createDirectories(mutableInput);
         createDirectories(convertedBags);
         createDirectories(stagedBags);
+    }
+
+    @BeforeEach
+    public void prepareReport() throws Exception {
         stdout = captureStdout();
         loggedEvents = captureLog(Level.INFO, "nl.knaw.dans.avbag");
     }
 
     @AfterEach
-    public void persist(TestInfo testInfo) throws Exception {
+    public void addToReport(TestInfo testInfo) throws Exception {
         var testName = testInfo.getDisplayName().replace("()", "");
         try (Stream<Path> paths = Files.walk(testDir, 5)) {
             var iterator = paths.filter(path ->
@@ -187,35 +191,45 @@ public class IntegrationTest extends AbstractTestWithTestDir {
             mutableInput.toFile()
         );
 
-        // TODO find a none/none without dct:source for a failure on a second bag
-        var firstBagParent = "eaa33307-4795-40a3-9051-e7d91a21838e";
-        FileUtils.delete(mutableInput.resolve(firstBagParent + "/f0b85307-268a-4238-a813-b361ea93feb1/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf").toFile());
+        // second bag fails when a none/none without dct:source does not exist
+
+        var bagParent2 = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
+        FileUtils.delete(mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/data/original/bijlage Gb interviewer 08.pdf").toFile());
+        var filesXmlFile2 = mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
+        var xmlLines2 = readAllLines(filesXmlFile2).stream()
+            .map(line -> !line.contains("visibleToRights") ? line : "<visibleToRights>NONE</visibleToRights>")
+            .toList();
+        writeString(filesXmlFile2, String.join("\n", xmlLines2));
 
         // third bag fails when visibleToRights is missing for a springfield file
-        var thirdBagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
-        var filesXmlFile = mutableInput.resolve(thirdBagParent + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
-        var xmlLines = readAllLines(filesXmlFile).stream()
+
+        var bagParent3 = "993ec2ee-b716-45c6-b9d1-7190f98a200a";
+        var filesXmlFile3 = mutableInput.resolve(bagParent3 + "/e50fe0a3-554e-49a4-98f8-f4a32f19def9/metadata/files.xml");
+        var xmlLines3 = readAllLines(filesXmlFile3).stream()
             .filter(line -> !line.contains("visibleToRights"))
             .toList();
-        writeString(filesXmlFile, String.join("\n", xmlLines));
+        writeString(filesXmlFile3, String.join("\n", xmlLines3));
 
         // the test
+
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
-        // assertions
+        // assert failure of second bag
 
-        assertNoLogMessageStartingWith("Creating revision 1: " + firstBagParent);
-        var secondBagEvent = getThrowableProxyWithLogMessageEqualTo(format(
-            "{0} failed, it may or may not have (incomplete) bags in {1}", firstBagParent, stagedBags
+        assertHasLogMessageStartingWith("Creating revision 2: " + bagParent2);
+        var bagEvent2 = getThrowableProxyWithLogMessageEqualTo(format(
+            "{0} failed, it may or may not have (incomplete) bags in {1}", bagParent2, stagedBags
         ));
-        assertThat(secondBagEvent.getClassName()).isEqualTo(NoSuchFileException.class.getCanonicalName());
-        assertThat(secondBagEvent.getMessage()).endsWith("Essenberg_1.pdf");
+        assertThat(bagEvent2.getClassName()).isEqualTo(IOException.class.getCanonicalName());
+        assertThat(bagEvent2.getMessage()).endsWith("interviewer 08.pdf");
 
-        assertHasLogMessageStartingWith("Creating revision 3: " + thirdBagParent);
-        var thirdBagEvent = getThrowableProxyWithLogMessageEqualTo(format(
-            "{0} failed, it may or may not have (incomplete) bags in {1}", thirdBagParent, stagedBags
+        // assert failure of third bag
+
+        assertHasLogMessageStartingWith("Creating revision 3: " + bagParent3);
+        var bagEvent3 = getThrowableProxyWithLogMessageEqualTo(format(
+            "{0} failed, it may or may not have (incomplete) bags in {1}", bagParent3, stagedBags
         ));
-        assertThat(thirdBagEvent.getMessage()).isEqualTo("""
+        assertThat(bagEvent3.getMessage()).isEqualTo("""
             Cannot invoke "org.w3c.dom.Element.getTagName()" because "oldRights" is null"""
         );
     }
@@ -238,7 +252,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
             .anyMatch(s -> s.startsWith(msg));
 
         if (!hasMessage) {
-            throw new AssertionError("No log message found starting with: " + msg);
+            throw new AssertionError("Should not have found a log message found starting with: " + msg);
         }
     }
 
