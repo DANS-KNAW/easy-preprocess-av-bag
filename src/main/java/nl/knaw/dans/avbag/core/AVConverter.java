@@ -73,7 +73,7 @@ public class AVConverter {
     private void convertOne(Path bag) {
         var bagParent = bag.getParent().getFileName();
         if (outputDir.resolve(bagParent).toFile().exists()) {
-            log.error("{} skipped, it exists in {}", bagParent, outputDir);
+            log.error("Skipped {}, it exists in {}", bagParent, outputDir);
             return;
         }
         try {

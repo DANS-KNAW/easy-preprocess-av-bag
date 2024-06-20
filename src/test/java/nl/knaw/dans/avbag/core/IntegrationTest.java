@@ -17,43 +17,46 @@ package nl.knaw.dans.avbag.core;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
 import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Files.writeString;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.text.MessageFormat.format;
 import static nl.knaw.dans.avbag.TestUtils.captureLog;
 import static nl.knaw.dans.avbag.TestUtils.captureStdout;
 import static org.apache.commons.io.file.PathUtils.touch;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class AVConverterTest extends AbstractTestWithTestDir {
-    Path integration = Path.of("src/test/resources/integration");
-    Path inputBags = integration.resolve("input-bags");
-    Path mutableInput = testDir.resolve("input-bags");
-    Path convertedBags = testDir.resolve("converted-bags");
-    Path stagedBags = testDir.resolve("staged-bags");
+public class IntegrationTest extends AbstractTestWithTestDir {
+    private final Path integration = Path.of("src/test/resources/integration");
+    private final Path inputBags = integration.resolve("input-bags");
+    private final Path mutableInput = testDir.resolve("input-bags");
+    private final Path convertedBags = testDir.resolve("converted-bags");
+    private final Path stagedBags = testDir.resolve("staged-bags");
 
-    @BeforeAll
-    public static void beforeAll() {
-        System.setProperty("logback.configurationFile", "logback-test.xml");
-    }
+    private final Path reportDir = testDir.getParent().resolve(testDir.getFileName() + "_reports");
+    private ListAppender<ILoggingEvent> loggedEvents;
+    private ByteArrayOutputStream stdout;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -61,30 +64,44 @@ public class AVConverterTest extends AbstractTestWithTestDir {
         createDirectories(mutableInput);
         createDirectories(convertedBags);
         createDirectories(stagedBags);
+        createDirectories(reportDir);
+        stdout = captureStdout();
+        loggedEvents = captureLog(Level.INFO, "nl.knaw.dans.avbag");
     }
 
     @AfterEach
-    public void persistLog(TestInfo testInfo) throws Exception {
-        String testName = testInfo.getDisplayName().replace("()", "");
-        var logFile = testDir.resolve("log.txt");
-        if(logFile.toFile().exists()) {
-            var savedLog = testDir.getParent().resolve(testDir.getFileName() + "_" + testName + ".log");
-            Files.move(logFile, savedLog, REPLACE_EXISTING); // TODO remove in beforeEach
+    public void persist(TestInfo testInfo) throws Exception {
+        var testName = testInfo.getDisplayName().replace("()", "");
+        try (Stream<Path> paths = Files.walk(testDir, 5)) {
+            var iterator = paths.filter(path ->
+                path.toString().endsWith("metadata/files.xml")
+            ).iterator();
+            while (iterator.hasNext()) {
+                var path = iterator.next();
+                var relativePath = testDir.relativize(path);
+                var backupPath = reportDir.resolve(testName).resolve(relativePath);
+                Files.createDirectories(backupPath.getParent());
+                Files.copy(path, backupPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        var logged = stdout.toString();
+        if (!loggedEvents.list.isEmpty()) {
+            writeString(reportDir.resolve(testName).resolve("events.log"), logged);
         }
     }
 
     @Test
-    public void integration_should_complain_about_not_existing_staging() throws Exception {
+    public void should_complain_about_not_existing_staging() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         FileUtils.deleteDirectory(stagedBags.toFile());
 
         assertThatThrownBy(() -> new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll())
             .isInstanceOf(NoSuchFileException.class)
-            .hasMessage("target/test/AVConverterTest/staged-bags");
+            .hasMessage("target/test/IntegrationTest/staged-bags");
     }
 
     @Test
-    public void integration_should_complain_about_content_in_staging() throws Exception {
+    public void should_complain_about_content_in_staging() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         touch(stagedBags.resolve("some-file"));
 
@@ -94,31 +111,22 @@ public class AVConverterTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void integration_should_complain_about_already_converted_bag() throws Exception {
+    public void should_complain_about_already_converted_bag() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         var uuid = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
         touch(convertedBags.resolve(uuid));
 
-        captureStdout();
-        var log = captureLog(Level.INFO, "nl.knaw.dans.avbag");
-
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
-        assertThat(log.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
-            .contains(uuid + " skipped, it exists in " + convertedBags);
+        assertThat(loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
+            .contains(format("Skipped {0}, it exists in {1}", uuid, convertedBags));
     }
 
     @Test
-    public void integration_should_be_happy() throws Exception {
-        var stdout = captureStdout();
-        captureLog(Level.INFO, "nl.knaw.dans.avbag");
-
+    public void should_be_happy() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
 
-        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources())
-            .convertAll();
-
-        writeString(testDir.resolve("log.txt"), stdout.toString());
+        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
         assertThat(mutableInput).isEmptyDirectory();
         assertThat(stagedBags).isEmptyDirectory();
@@ -132,10 +140,7 @@ public class AVConverterTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void integration_should_have_an_empty_second_bag_with_all_files_none_none() throws Exception {
-        var stdout = captureStdout();
-        var log = captureLog(Level.INFO, "nl.knaw.dans.avbag");
-
+    public void should_have_an_empty_second_bag_with_all_files_none_none() throws Exception {
         var bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
 
         FileUtils.copyDirectory(
@@ -150,27 +155,22 @@ public class AVConverterTest extends AbstractTestWithTestDir {
             .toList();
         writeString(filesXmlFile, String.join("\n", xmlLines));
 
-        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources())
-            .convertAll();
+        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
-        writeString(testDir.resolve("log.txt"), stdout.toString());
-        var logLines = log.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
+        var logLines = loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
 
         // no third bag logged
-        var last = log.list.get(logLines.size() - 1);
+        var last = loggedEvents.list.get(logLines.size() - 1);
         assertThat(last.getFormattedMessage()).endsWith("## ");
         assertThat(last.getLevel()).isEqualTo(Level.INFO);
 
-        var warning = log.list.get(logLines.size() - 2);
+        var warning = loggedEvents.list.get(logLines.size() - 2);
         assertThat(warning.getMessage()).endsWith("Not all springfield files in the mapping are present in the second bag");
         assertThat(warning.getLevel()).isEqualTo(Level.WARN);
     }
 
     @Test
-    public void integration_should_fail_because_of_not_expected_exception() throws Exception {
-        var stdout = captureStdout();
-        var log = captureLog(Level.INFO, "nl.knaw.dans.avbag");
-
+    public void should_fail_because_of_not_expected_exception() throws Exception {
         var bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
 
         FileUtils.copyDirectory(
@@ -185,13 +185,10 @@ public class AVConverterTest extends AbstractTestWithTestDir {
             .toList();
         writeString(filesXmlFile, String.join("\n", xmlLines));
 
-        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources())
-            .convertAll();
-
-        writeString(testDir.resolve("log.txt"), stdout.toString());
+        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
         // failure report in logging because there is no visibleToRights element for the added springfield file
-        var lastLoggingEvent = log.list.get(log.list.size() - 1);
+        var lastLoggingEvent = loggedEvents.list.get(loggedEvents.list.size() - 1);
         assertThat(lastLoggingEvent.getMessage())
             .isEqualTo(bagParent + " failed, it may or may not have (incomplete) bags in " + stagedBags);
         assertThat(lastLoggingEvent.getThrowableProxy().getMessage())
