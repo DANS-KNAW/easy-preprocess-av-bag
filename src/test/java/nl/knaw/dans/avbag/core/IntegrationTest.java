@@ -35,6 +35,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.stream.Stream;
 
@@ -99,8 +100,16 @@ public class IntegrationTest extends AbstractTestWithTestDir {
             }
         }
         var logged = stdout.toString();
-        if (!loggedEvents.list.isEmpty()) {
-            writeString(reportDir.resolve(testName).resolve("events.log"), logged);
+        if (!logged.isEmpty()) {
+            String[] lines = logged.split("\n");
+            var filteredValue = "at org.junit";
+            var result = Arrays.stream(lines).reduce((prev, curr) ->
+                    curr.contains(filteredValue)
+                        ? prev + "... "
+                        : prev + "\n" + curr
+                )
+                .orElse("    .junit");
+            writeString(reportDir.resolve(testName).resolve("events.log"), result);
         }
     }
 
