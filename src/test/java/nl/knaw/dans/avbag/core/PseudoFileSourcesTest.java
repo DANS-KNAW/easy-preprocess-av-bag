@@ -35,16 +35,17 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     @Test
     public void should_abort_when_dirs_are_omitted() {
         assertThatThrownBy(() ->
-            new PseudoFileSources(new PseudoFileSourcesConfig())
+            new PseudoFileSources(new PseudoFileSourcesConfig(null, null, null))
         ).isInstanceOf(IllegalArgumentException.class)
             .hasMessage("PseudoFileSourcesConfig is incomplete");
     }
 
     @Test
     public void should_abort_when_dirs_do_not_exist() {
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        pseudoFileSources.setDarkarchiveDir(testDir.resolve("darkArchiveDir"));
-        pseudoFileSources.setSpringfieldDir(testDir.resolve("springfieldDir"));
+        var pseudoFileSources = new PseudoFileSourcesConfig(
+            testDir.resolve("darkArchiveDir"),
+            testDir.resolve("springfieldDir"),
+            null);
         assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
         ).isInstanceOf(IOException.class)
@@ -54,9 +55,10 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_abort_when_csv_is_not_specified() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        pseudoFileSources.setDarkarchiveDir(createDirectories(testDir.resolve("darkArchiveDir")));
-        pseudoFileSources.setSpringfieldDir(createDirectories(testDir.resolve("springfieldDir")));
+        var pseudoFileSources = new PseudoFileSourcesConfig(
+            createDirectories(testDir.resolve("darkArchiveDir")),
+            createDirectories(testDir.resolve("springfieldDir")),
+            null);
         assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
         ).isInstanceOf(IllegalArgumentException.class)
@@ -65,10 +67,11 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_abort_when_csv_does_not_exist() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        pseudoFileSources.setDarkarchiveDir(createDirectories(testDir.resolve("darkArchiveDir")));
-        pseudoFileSources.setSpringfieldDir(createDirectories(testDir.resolve("springfieldDir")));
-        pseudoFileSources.setPath(testDir.resolve("mapping.csv"));
+        var pseudoFileSources = new PseudoFileSourcesConfig(
+            createDirectories(testDir.resolve("darkArchiveDir")),
+            createDirectories(testDir.resolve("springfieldDir")),
+            testDir.resolve("mapping.csv")
+        );
         assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
         ).isInstanceOf(IOException.class)
@@ -77,10 +80,11 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_abort_when_csv_is_a_dir() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        pseudoFileSources.setDarkarchiveDir(createDirectories(testDir.resolve("darkArchiveDir")));
-        pseudoFileSources.setSpringfieldDir(createDirectories(testDir.resolve("springfieldDir")));
-        pseudoFileSources.setPath(Path.of("src/test/resources/integration"));
+        var pseudoFileSources = new PseudoFileSourcesConfig(
+            createDirectories(testDir.resolve("darkArchiveDir")),
+            createDirectories(testDir.resolve("springfieldDir")),
+            Path.of("src/test/resources/integration")
+        );
         AbstractThrowableAssert<?, ? extends Throwable> abstractThrowableAssert = assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
         );
@@ -90,10 +94,11 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_abort_when_files_in_csv_do_not_exist() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        pseudoFileSources.setDarkarchiveDir(createDirectories(testDir.resolve("darkArchiveDir")));
-        pseudoFileSources.setSpringfieldDir(createDirectories(testDir.resolve("springfieldDir")));
-        pseudoFileSources.setPath(Path.of("src/test/resources/integration/mapping.csv"));
+        var pseudoFileSources = new PseudoFileSourcesConfig(
+            createDirectories(testDir.resolve("darkArchiveDir")),
+            createDirectories(testDir.resolve("springfieldDir")),
+            Path.of("src/test/resources/integration/mapping.csv")
+        );
         assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
         ).isInstanceOf(IOException.class)
@@ -103,11 +108,12 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_warn_empty_av_column() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        var springfieldDir = "src/test/resources/integration/springfield-dir";
-        pseudoFileSources.setSpringfieldDir(Path.of(springfieldDir));
-        pseudoFileSources.setDarkarchiveDir(Path.of("src/test/resources/integration/av-dir"));
         var csv = testDir.resolve("mapping.csv");
+        var pseudoFileSources = new PseudoFileSourcesConfig(
+            Path.of("src/test/resources/integration/av-dir"),
+            Path.of("src/test/resources/integration/springfield-dir"),
+            csv
+        );
         createDirectories(testDir);
         writeString(csv, """
             easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir
@@ -126,11 +132,11 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_warn_empty_file_id_column() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        var springfieldDir = "src/test/resources/integration/springfield-dir";
-        pseudoFileSources.setSpringfieldDir(Path.of(springfieldDir));
-        pseudoFileSources.setDarkarchiveDir(Path.of("src/test/resources/integration/av-dir"));
         var csv = testDir.resolve("mapping.csv");
+        var pseudoFileSources = new PseudoFileSourcesConfig(
+            Path.of("src/test/resources/integration/av-dir"),
+            Path.of("src/test/resources/integration/springfield-dir"),
+            csv);
         createDirectories(testDir);
         writeString(csv, """
             easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir
@@ -149,11 +155,12 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_not_throw() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig();
         var springfieldDir = "src/test/resources/integration/springfield-dir";
-        pseudoFileSources.setSpringfieldDir(Path.of(springfieldDir));
-        pseudoFileSources.setDarkarchiveDir(Path.of("src/test/resources/integration/av-dir"));
-        pseudoFileSources.setPath(Path.of("src/test/resources/integration/mapping.csv"));
+        var pseudoFileSources = new PseudoFileSourcesConfig(
+            Path.of("src/test/resources/integration/av-dir"),
+            Path.of(springfieldDir),
+            Path.of("src/test/resources/integration/mapping.csv")
+        );
 
         var sources = new PseudoFileSources(pseudoFileSources);
 

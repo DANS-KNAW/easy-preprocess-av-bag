@@ -178,12 +178,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         touch(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
         var placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        var springfieldDir = "src/test/resources/integration/springfield-dir";
-        pseudoFileSources.setSpringfieldDir(Path.of(springfieldDir));
-        pseudoFileSources.setDarkarchiveDir(Path.of("src/test/resources/integration/av-dir"));
-        pseudoFileSources.setPath(Path.of("src/test/resources/integration/mapping.csv"));
-        var sources = new PseudoFileSources(pseudoFileSources);
+        var sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 
         assertTrue(placeHolders.hasSameFileIds(sources));
     }
@@ -200,12 +195,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         touch(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
         var placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        var springfieldDir = "src/test/resources/integration/springfield-dir";
-        pseudoFileSources.setSpringfieldDir(Path.of(springfieldDir));
-        pseudoFileSources.setDarkarchiveDir(Path.of("src/test/resources/integration/av-dir"));
-        pseudoFileSources.setPath(Path.of("src/test/resources/integration/mapping.csv"));
-        var sources = new PseudoFileSources(pseudoFileSources);
+        var sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 
         captureStdout();
         var log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
@@ -237,12 +227,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         touch(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
         var placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
-        var pseudoFileSources = new PseudoFileSourcesConfig();
-        var springfieldDir = "src/test/resources/integration/springfield-dir";
-        pseudoFileSources.setSpringfieldDir(Path.of(springfieldDir));
-        pseudoFileSources.setDarkarchiveDir(Path.of("src/test/resources/integration/av-dir"));
-        pseudoFileSources.setPath(Path.of("src/test/resources/integration/mapping.csv"));
-        var sources = new PseudoFileSources(pseudoFileSources);
+        var sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 
         captureStdout();
         var log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
@@ -254,4 +239,14 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
                 " files in PseudoFileSources but not having <dct:source> and length zero: [easy-file:5455618]"
             ));
     }
+
+
+    private static PseudoFileSourcesConfig getPseudoFileSourcesConfig() {
+        return new PseudoFileSourcesConfig(
+            Path.of("src/test/resources/integration/springfield-dir"),
+            Path.of("src/test/resources/integration/av-dir"),
+            Path.of("src/test/resources/integration/mapping.csv")
+        );
+    }
+
 }

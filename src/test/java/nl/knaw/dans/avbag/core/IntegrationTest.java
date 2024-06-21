@@ -280,11 +280,11 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     private PseudoFileSources getPseudoFileSources() throws IOException {
-        var pseudoFileSourcesConfig = new PseudoFileSourcesConfig();
-        pseudoFileSourcesConfig.setDarkarchiveDir(integration.resolve("av-dir"));
-        pseudoFileSourcesConfig.setSpringfieldDir(integration.resolve("springfield-dir"));
-        pseudoFileSourcesConfig.setPath(integration.resolve("mapping.csv"));
-        return new PseudoFileSources(pseudoFileSourcesConfig);
+        return new PseudoFileSources(new PseudoFileSourcesConfig(
+            integration.resolve("av-dir"),
+            integration.resolve("springfield-dir"),
+            integration.resolve("mapping.csv")
+        ));
     }
 
     private void collectManifests(ArrayList<Object> manifests, Path convertedBags) throws IOException {

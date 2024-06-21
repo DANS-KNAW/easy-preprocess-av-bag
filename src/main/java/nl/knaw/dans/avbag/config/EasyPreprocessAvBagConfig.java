@@ -19,12 +19,17 @@ package nl.knaw.dans.avbag.config;
 import io.dropwizard.core.Configuration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 
 import java.nio.file.Path;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class EasyPreprocessAvBagConfig extends Configuration {
+
+    @NonNull
     private PseudoFileSourcesConfig pseudoFileSources;
+
+    @NonNull
     private Path stagingDir;
 }
