@@ -182,14 +182,18 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         var logLines = loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
 
-        // no third bag logged
+        // third bag aborted
         var last = loggedEvents.list.get(logLines.size() - 1);
-        assertThat(last.getFormattedMessage()).endsWith("## ");
-        assertThat(last.getLevel()).isEqualTo(Level.INFO);
+        assertThat(last.getFormattedMessage()).endsWith(bagParent + " failed, it may or may not have (incomplete) bags in target/test/IntegrationTest/staged-bags");
+        assertThat(last.getLevel()).isEqualTo(Level.ERROR);
+        assertThat(last.getThrowableProxy().getMessage()).endsWith("Not all springfield files in the mapping are present in the second bag");
 
-        var warning = loggedEvents.list.get(logLines.size() - 2);
-        assertThat(warning.getMessage()).endsWith("Not all springfield files in the mapping are present in the second bag");
-        assertThat(warning.getLevel()).isEqualTo(Level.WARN);
+        var secondBagParent = loggedEvents.list.get(logLines.size() - 2).getFormattedMessage().split("## ")[1];
+        var secondBag = Files.list(stagedBags.resolve(secondBagParent)).toList().get(0);
+        assertThat(secondBag.resolve("manifest-sha1.txt"))
+            .isEmptyFile();
+        assertThat(secondBag.resolve("data"))
+            .doesNotExist();
     }
 
     @Test

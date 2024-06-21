@@ -21,6 +21,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,15 +44,27 @@ public class NoneNoneFiles {
                 var filepath = fileElement.getAttribute("filepath");
                 filesWithNoneNone.add(Path.of(filepath));
                 fileElement.getParentNode().removeChild(fileElement);
-                var file = bagDir.resolve(filepath).toFile();
-                if (!file.delete()) {
+                var file = bagDir.resolve(filepath);
+                if (!file.toFile().delete()) {
                     throw new IOException("%s: Could not delete %s".formatted(bagDir.getParent().getFileName(), file));
                 }
+                deleteIfEmpty(file.getParent());
                 // Since we're modifying the list we're iterating over, decrement i to adjust for the next iteration.
                 i--;
             }
         }
         return filesWithNoneNone;
+    }
+
+    private static void deleteIfEmpty(Path path) throws IOException {
+        if (Files.isDirectory(path)) {
+            try (var list = Files.list(path)) {
+                if (list.findAny().isEmpty()) {
+                    Files.deleteIfExists(path);
+                    deleteIfEmpty(path.getParent());
+                }
+            }
+        }
     }
 
     private static boolean isNone(Node fileElement, String tag) {

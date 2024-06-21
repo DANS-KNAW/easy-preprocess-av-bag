@@ -52,7 +52,8 @@ public class SpringfieldFiles {
             }
         }
         if (idToElement.size() != springfieldFiles.size()) {
-            log.warn(bagDir.getParent().getFileName() + " Not all springfield files in the mapping are present in the second bag");
+            // adding the bagParent is of no use as the bag is not yet created
+            throw new IllegalStateException("Not all springfield files in the mapping are present in the second bag");
         }
     }
 
