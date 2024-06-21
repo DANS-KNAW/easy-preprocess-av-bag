@@ -35,6 +35,7 @@ import java.util.UUID;
 
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.text.MessageFormat.format;
 import static nl.knaw.dans.avbag.core.BagInfoManager.updateBagVersion;
 import static nl.knaw.dans.avbag.core.ManifestManager.removePayloadsFromManifest;
 import static nl.knaw.dans.avbag.core.ManifestManager.updateManifests;
@@ -62,7 +63,19 @@ public class AVConverter {
             }
         }
         try (var pathStream = Files.walk(inputDir, 2)) {
-            pathStream.filter(this::notSelfOrChild).forEach(this::convertOne);
+            pathStream.filter(this::notSelfOrChild)
+                .forEach(this::convertOne);
+        }
+        System.out.println(format("Conversion finished: failed {0}, staged {1}, done {2}",
+            getCount(inputDir),
+            getCount(stagingDir),
+            getCount(outputDir)
+        ));
+    }
+
+    private long getCount(Path inputDir) throws IOException {
+        try (var list = Files.list(inputDir)) {
+            return list.count();
         }
     }
 
