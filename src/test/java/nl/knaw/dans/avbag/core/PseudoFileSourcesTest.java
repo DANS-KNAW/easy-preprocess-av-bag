@@ -32,37 +32,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
-    @Test
-    public void should_abort_when_dirs_are_omitted() {
-        assertThatThrownBy(() ->
-            new PseudoFileSources(new PseudoFileSourcesConfig(null, null, null))
-        ).isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("PseudoFileSourcesConfig is incomplete");
-    }
 
     @Test
     public void should_abort_when_dirs_do_not_exist() {
         var pseudoFileSources = new PseudoFileSourcesConfig(
             testDir.resolve("darkArchiveDir"),
             testDir.resolve("springfieldDir"),
-            null);
+            testDir.resolve("not-existing-mapping.csv"));
         assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
         ).isInstanceOf(IOException.class)
             .hasMessage(
                 "Not existing or not a directory: [target/test/PseudoFileSourcesTest/darkArchiveDir, target/test/PseudoFileSourcesTest/springfieldDir]");
-    }
-
-    @Test
-    public void should_abort_when_csv_is_not_specified() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig(
-            createDirectories(testDir.resolve("darkArchiveDir")),
-            createDirectories(testDir.resolve("springfieldDir")),
-            null);
-        assertThatThrownBy(() ->
-            new PseudoFileSources(pseudoFileSources)
-        ).isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("PseudoFileSources.getPath() == null");
     }
 
     @Test
