@@ -90,7 +90,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     @Test
     public void should_warn_empty_av_column() throws IOException {
         var csv = testDir.resolve("mapping.csv");
-        var pseudoFileSources = new PseudoFileSourcesConfig(
+        var pseudoFileSourcesConfig = new PseudoFileSourcesConfig(
             Path.of("src/test/resources/integration/av-dir"),
             Path.of("src/test/resources/integration/springfield-dir"),
             csv
@@ -103,9 +103,9 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
         TestUtils.captureStdout();
         var log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
 
-        pseudoFileSources.setPath(csv);
-
-        new PseudoFileSources(pseudoFileSources);
+        assertThatThrownBy(() -> new PseudoFileSources(pseudoFileSourcesConfig))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("1 records have missing values. See warnings.");
 
         assertThat(log.list.get(0).getFormattedMessage())
             .startsWith("No value in column path_in_AV_dir and/or easy_file_id: CSVRecord [comment='null', recordNumber=1, values=[easy-file:7296382, easy-dataset:112582, , eaa33307");
@@ -126,9 +126,9 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
         TestUtils.captureStdout();
         var log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
 
-        pseudoFileSources.setPath(csv);
-
-        new PseudoFileSources(pseudoFileSources);
+        assertThatThrownBy(() -> new PseudoFileSources(pseudoFileSources))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("1 records have missing values. See warnings.");
 
         assertThat(log.list.get(0).getFormattedMessage())
             .startsWith("No value in column path_in_AV_dir and/or easy_file_id: CSVRecord [comment='null', recordNumber=1, values=[, easy-dataset:112582, eaa33307");

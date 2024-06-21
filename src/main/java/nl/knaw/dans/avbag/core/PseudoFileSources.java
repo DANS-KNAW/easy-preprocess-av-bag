@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.text.MessageFormat.format;
 import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 @Slf4j
@@ -72,8 +73,6 @@ public class PseudoFileSources {
         if (!notExisting.isEmpty()) {
             throw new IOException("Not existing or not a directory: " + notExisting);
         }
-        if (null == pseudoFileSources.getPath())
-            throw new IllegalArgumentException("PseudoFileSources.getPath() == null");
         readCSV(pseudoFileSources.getPath());
 
         this.darkArchiveDir = pseudoFileSources.getDarkarchiveDir();
@@ -98,7 +97,7 @@ public class PseudoFileSources {
             throw new IOException("Does not exist or is not a file: " + filePath);
         }
         try (CSVParser csvParser = CSVParser.parse(filePath, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withHeader())) {
-
+            var count = 0;
             for (CSVRecord csvRecord : csvParser) {
                 var pathInAVdDir = csvRecord.get("path_in_AV_dir");
                 var pathInSpringfieldDir = csvRecord.get("path_in_springfield_dir");
@@ -114,8 +113,13 @@ public class PseudoFileSources {
                         ).put(fileId, pathInSpringfieldDir);
                     }
                 }
-                else
+                else {
+                    count++;
                     log.warn("No value in column path_in_AV_dir and/or easy_file_id: {}", csvRecord);
+                }
+            }
+            if (count > 0) {
+                throw new IllegalStateException(format("{0} records have missing values. See warnings.", count));
             }
         }
     }
