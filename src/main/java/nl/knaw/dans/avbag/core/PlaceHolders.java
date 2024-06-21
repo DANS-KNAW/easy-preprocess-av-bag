@@ -62,9 +62,9 @@ public class PlaceHolders {
 
         // Log the differences
         if (!onlyInMapping.isEmpty())
-            log.error("Files in PseudoFileSources but not having <dct:source> and length zero: {} {}", bagParent, onlyInMapping);
+            log.error("{} files in PseudoFileSources but not having <dct:source> and length zero: {}", bagParent, onlyInMapping);
         if (!onlyInReplaced.isEmpty())
-            log.error("Files having <dct:source> and length zero but not in PseudoFileSources: {} {}", bagParent, onlyInReplaced);
+            log.error("{} files having <dct:source> and length zero but not in PseudoFileSources: {}", bagParent, onlyInReplaced);
 
         return onlyInReplaced.isEmpty() && onlyInMapping.isEmpty();
     }

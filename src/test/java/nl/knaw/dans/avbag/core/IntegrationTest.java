@@ -88,7 +88,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         var testName = testInfo.getDisplayName().replace("()", "");
         try (Stream<Path> paths = Files.walk(testDir, 5)) {
             var iterator = paths.filter(path ->
-                path.toString().endsWith("metadata/files.xml")
+                path.toString().endsWith("metadata/files.xml") || path.toString().endsWith("manifest-sha1.txt")
             ).iterator();
             while (iterator.hasNext()) {
                 var path = iterator.next();
@@ -193,6 +193,15 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         // second bag will fail when a none/none without dct:source does not exist
 
+        var bagParent1 = "89e54b08-5f1f-452c-a551-0d35f75a3939";
+        var filesXmlFile1 = mutableInput.resolve(bagParent1 + "/dba86e2b-0665-4324-a401-3f5a24a7a2ab/metadata/files.xml");
+        var xmlLines1 = readAllLines(filesXmlFile1).stream()
+            .filter(line -> !line.contains("dct:source"))
+            .toList();
+        writeString(filesXmlFile1, String.join("\n", xmlLines1));
+
+        // second bag will fail when a none/none without dct:source does not exist
+
         var bagParent2 = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
         FileUtils.delete(mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/data/original/bijlage Gb interviewer 08.pdf").toFile());
         var filesXmlFile2 = mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
@@ -217,10 +226,15 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         // assert which bags succeeded
 
         assertHasLogMessageStartingWith("Finished eaa");
-        assertHasLogMessageStartingWith("Finished 89e");
         assertHasLogMessageStartingWith("Finished 54c");
+        assertNoLogMessageStartingWith("Finished: " + bagParent1);
         assertNoLogMessageStartingWith("Finished: " + bagParent2);
         assertNoLogMessageStartingWith("Finished " + bagParent3);
+
+        // assert failure on first bag
+
+        assertNoLogMessageStartingWith("Creating revision 1: " + bagParent1);
+        assertHasLogMessageStartingWith(format("{0} files in PseudoFileSources but not having <dct:source> and length zero: [easy-file:7728890, easy-file:7728889, easy-file:7728888]", bagParent1));
 
         // assert failure on second bag
 

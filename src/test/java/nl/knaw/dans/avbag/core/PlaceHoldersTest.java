@@ -213,7 +213,8 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         assertFalse(placeHolders.hasSameFileIds(sources));
         assertThat(log.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
             .containsExactlyInAnyOrderElementsOf(Set.of(
-                "Files having <dct:source> and length zero but not in PseudoFileSources: 7bf09491-54b4-436e-7f59-1027f54cbb0c [easy-file:6227174]"
+                bagDir.getParent().getFileName() +
+                " files having <dct:source> and length zero but not in PseudoFileSources: [easy-file:6227174]"
             ));
     }
 
@@ -249,7 +250,8 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         assertFalse(placeHolders.hasSameFileIds(sources));
         assertThat(log.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
             .containsExactlyInAnyOrderElementsOf(Set.of(
-                "Files in PseudoFileSources but not having <dct:source> and length zero: 7bf09491-54b4-436e-7f59-1027f54cbb0c [easy-file:5455618]"
+                bagDir.getParent().getFileName() +
+                " files in PseudoFileSources but not having <dct:source> and length zero: [easy-file:5455618]"
             ));
     }
 }
