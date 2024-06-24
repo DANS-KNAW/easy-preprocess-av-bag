@@ -294,9 +294,9 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
     private PseudoFileSources getPseudoFileSources() throws IOException {
         return new PseudoFileSources(new PseudoFileSourcesConfig(
-            integration.resolve("av-dir"),
-            integration.resolve("springfield-dir"),
-            integration.resolve("mapping.csv")
+            integration.resolve("darkarchive"),
+            integration.resolve("springfield"),
+            integration.resolve("sources.csv")
         ));
     }
 

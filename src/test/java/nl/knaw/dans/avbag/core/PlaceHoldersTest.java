@@ -243,9 +243,9 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
     private static PseudoFileSourcesConfig getPseudoFileSourcesConfig() {
         return new PseudoFileSourcesConfig(
-            Path.of("src/test/resources/integration/av-dir"),
-            Path.of("src/test/resources/integration/springfield-dir"),
-            Path.of("src/test/resources/integration/mapping.csv")
+            Path.of("src/test/resources/integration/darkarchive"),
+            Path.of("src/test/resources/integration/springfield"),
+            Path.of("src/test/resources/integration/sources.csv")
         );
     }
 
