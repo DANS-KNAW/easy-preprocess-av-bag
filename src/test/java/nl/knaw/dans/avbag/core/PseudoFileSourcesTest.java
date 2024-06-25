@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 import static java.nio.file.Files.createDirectories;
@@ -98,9 +99,10 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
             csv
         );
         createDirectories(testDir);
-        writeString(csv, """
-            easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir
-            easy-file:7296382,easy-dataset:112582,,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,""");
+        writeString(csv, String.join("\n", List.of(
+            "easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir",
+            "easy-file:7296382,easy-dataset:112582,,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,")
+        ));
 
         TestUtils.captureStdout();
         ListAppender<ILoggingEvent> log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
@@ -121,9 +123,10 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
             Path.of("src/test/resources/integration/springfield"),
             csv);
         createDirectories(testDir);
-        writeString(csv, """
-            easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir
-            ,easy-dataset:112582,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,""");
+        writeString(csv, String.join("\n", List.of(
+            "easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir",
+            ",easy-dataset:112582,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,"
+        )));
 
         TestUtils.captureStdout();
         ListAppender<ILoggingEvent> log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");

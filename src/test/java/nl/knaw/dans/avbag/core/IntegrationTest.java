@@ -267,8 +267,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         IThrowableProxy bagEvent3 = getThrowableProxyWithLogMessageEqualTo(format(
             "{0} failed, it may or may not have (incomplete) bags in {1}", bagParent3, stagedBags
         ));
-        assertThat(bagEvent3.getMessage()).isEqualTo("""
-            Cannot invoke "org.w3c.dom.Element.getTagName()" because "oldRights" is null"""
+        assertThat(bagEvent3.getMessage()).isEqualTo("Cannot invoke \"org.w3c.dom.Element.getTagName()\" because \"oldRights\" is null"
         );
     }
 
