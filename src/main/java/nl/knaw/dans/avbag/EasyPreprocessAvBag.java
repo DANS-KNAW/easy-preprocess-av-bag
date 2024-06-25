@@ -17,10 +17,10 @@
 package nl.knaw.dans.avbag;
 
 import lombok.extern.slf4j.Slf4j;
+import nl.knaw.dans.AbstractCommandLineApp;
 import nl.knaw.dans.avbag.config.EasyPreprocessAvBagConfig;
 import nl.knaw.dans.avbag.core.AVConverter;
 import nl.knaw.dans.avbag.core.PseudoFileSources;
-import nl.knaw.dans.lib.util.AbstractCommandLineApp;
 import nl.knaw.dans.lib.util.CliVersionProvider;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;

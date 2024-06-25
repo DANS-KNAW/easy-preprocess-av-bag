@@ -88,8 +88,7 @@ public class SpringfieldFiles {
         FileUtils.copyFile(
             source.toFile(),
             bagDir.resolve(destination).toFile(),
-            true,
-            COPY_ATTRIBUTES
+            true
         );
         return destination;
     }

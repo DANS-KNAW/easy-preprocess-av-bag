@@ -27,12 +27,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static java.text.MessageFormat.format;
 import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
@@ -67,10 +69,10 @@ public class PseudoFileSources {
 
     public PseudoFileSources(PseudoFileSourcesConfig pseudoFileSources) throws IOException {
         Path[] dirs = new Path[] { pseudoFileSources.getDarkarchiveDir(), pseudoFileSources.getSpringfieldDir() };
-        if (!Arrays.stream(dirs).filter(Objects::isNull).toList().isEmpty()) {
+        if (Arrays.stream(dirs).anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("PseudoFileSourcesConfig is incomplete");
         }
-        List<Path> notExisting = Arrays.stream(dirs).filter(dir -> !FileUtils.isDirectory(dir.toFile())).toList();
+        List<Path> notExisting = Arrays.stream(dirs).filter(dir -> !Files.isDirectory(dir)).collect(Collectors.toList());
         if (!notExisting.isEmpty()) {
             throw new IOException("Not existing or not a directory: " + notExisting);
         }
@@ -82,11 +84,11 @@ public class PseudoFileSources {
         List<Path> notExistingSpringfield = bagParentToFileToSpringField.values().stream()
             .flatMap(innerMap -> innerMap.values().stream())
             .map(springfieldDir::resolve)
-            .filter(path -> !Files.exists(path)).toList();
+            .filter(path -> !Files.exists(path)).collect(Collectors.toList());
         List<Path> notExistingAV = bagParentToFileToAV.values().stream()
             .flatMap(innerMap -> innerMap.values().stream())
             .map(darkArchiveDir::resolve)
-            .filter(path -> !Files.exists(path)).toList();
+            .filter(path -> !Files.exists(path)).collect(Collectors.toList());
         if (!notExistingSpringfield.isEmpty() || !notExistingAV.isEmpty()) {
             throw new IOException("Not existing files: " + notExistingSpringfield + " " + notExistingAV);
         }
@@ -104,7 +106,7 @@ public class PseudoFileSources {
                 String pathInSpringfieldDir = csvRecord.get("path_in_springfield_dir");
                 String fileId = csvRecord.get("easy_file_id");
                 if (isNotEmpty(pathInAVdDir) && isNotEmpty(fileId)) {
-                    String bagParent = Path.of(pathInAVdDir).getName(0).toString();
+                    String bagParent = Paths.get(pathInAVdDir).getName(0).toString();
                     bagParentToFileToAV.computeIfAbsent(
                         bagParent, k -> new HashMap<>()
                     ).put(fileId, pathInAVdDir);

@@ -36,8 +36,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.text.MessageFormat.format;
 import static nl.knaw.dans.avbag.core.BagInfoManager.updateBagVersion;
 import static nl.knaw.dans.avbag.core.ManifestManager.removePayloadsFromManifest;
@@ -160,7 +158,7 @@ public class AVConverter {
         FileUtils.copyFile(
             source.toFile(),
             bagDir.resolve(destination).toFile(),
-            true, REPLACE_EXISTING, COPY_ATTRIBUTES
+            true
         );
     }
 }
