@@ -37,7 +37,7 @@ import java.nio.file.Path;
 
 public class XmlUtil {
     public static Document readXml(Path path) throws ParserConfigurationException, IOException, SAXException {
-        var factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         factory.setNamespaceAware(true);

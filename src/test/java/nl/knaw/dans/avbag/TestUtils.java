@@ -30,13 +30,13 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 public class TestUtils {
 
     public static ByteArrayOutputStream captureStdout() {
-        var outContent = new ByteArrayOutputStream();
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outContent));
         return outContent;
     }
 
     public static ListAppender<ILoggingEvent> captureLog(Level debug, String loggerName) {
-        var logger = (Logger) LoggerFactory.getLogger(loggerName);
+        Logger logger = (Logger) LoggerFactory.getLogger(loggerName);
         ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
         listAppender.start();
         logger.setLevel(debug);

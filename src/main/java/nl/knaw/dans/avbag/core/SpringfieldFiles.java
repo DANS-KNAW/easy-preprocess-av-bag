@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -44,9 +45,9 @@ public class SpringfieldFiles {
         this.bagDir = bagDir;
         this.filesXml = filesXml;
         this.springfieldFiles = springfieldFiles;
-        var idElems = filesXml.getElementsByTagName("dct:identifier");
+        NodeList idElems = filesXml.getElementsByTagName("dct:identifier");
         for (int i = 0; i < idElems.getLength(); i++) {
-            var idElem = (Element) idElems.item(i);
+            Element idElem = (Element) idElems.item(i);
             if (springfieldFiles.containsKey(idElem.getTextContent())) {
                 idToElement.put(idElem.getTextContent(), (Element) idElem.getParentNode());
             }
@@ -63,10 +64,10 @@ public class SpringfieldFiles {
 
     public void addFiles(PlaceHolders placeHolders) throws IOException {
         List<Node> newFileList = new ArrayList<>();
-        for (var entry : idToElement.entrySet()) {
-            var fileId = entry.getKey();
-            var added = addPayloadFile(springfieldFiles.get(fileId), placeHolders.getDestPath(fileId));
-            var newFileElement = newFileElement(added, entry.getValue());
+        for (Map.Entry<String, Element> entry : idToElement.entrySet()) {
+            String fileId = entry.getKey();
+            String added = addPayloadFile(springfieldFiles.get(fileId), placeHolders.getDestPath(fileId));
+            Element newFileElement = newFileElement(added, entry.getValue());
             newFileList.add(newFileElement);
         }
         // separate loops to not interfere prematurely
@@ -77,13 +78,13 @@ public class SpringfieldFiles {
     }
 
     private String addPayloadFile(Path source, String placeHolder) throws IOException {
-        var sourceExtension = getExtension(source.toString());
-        var placeHolderExtension = getExtension(placeHolder);
-        var newExtension = sourceExtension.equals(placeHolderExtension)
+        String sourceExtension = getExtension(source.toString());
+        String placeHolderExtension = getExtension(placeHolder);
+        String newExtension = sourceExtension.equals(placeHolderExtension)
             ? "-streaming." + sourceExtension
             : "." + sourceExtension;
 
-        var destination = removeExtension(placeHolder) + newExtension;
+        String destination = removeExtension(placeHolder) + newExtension;
         FileUtils.copyFile(
             source.toFile(),
             bagDir.resolve(destination).toFile(),
@@ -94,7 +95,7 @@ public class SpringfieldFiles {
     }
 
     private Element newFileElement(String addedFilePath, Element oldFileElement) {
-        var newElement = filesXml.createElement("file");
+        Element newElement = filesXml.createElement("file");
         newElement.setAttribute("filepath", addedFilePath);
         newElement.appendChild(newRightsElement("accessibleToRights", oldFileElement));
         newElement.appendChild(newRightsElement("visibleToRights", oldFileElement));
@@ -102,8 +103,8 @@ public class SpringfieldFiles {
     }
 
     private Element newRightsElement(String tag, Element oldFileElement) {
-        var oldRights = (Element) oldFileElement.getElementsByTagName(tag).item(0);
-        var rightsElement = filesXml.createElement(oldRights.getTagName());
+        Element oldRights = (Element) oldFileElement.getElementsByTagName(tag).item(0);
+        Element rightsElement = filesXml.createElement(oldRights.getTagName());
         rightsElement.setTextContent(oldRights.getTextContent());
         return rightsElement;
     }

@@ -16,6 +16,7 @@
 package nl.knaw.dans.avbag.core;
 
 import nl.knaw.dans.bagit.domain.Bag;
+import nl.knaw.dans.bagit.domain.Metadata;
 import nl.knaw.dans.bagit.exceptions.InvalidBagitFileFormatException;
 import nl.knaw.dans.bagit.exceptions.MaliciousPathException;
 import nl.knaw.dans.bagit.exceptions.UnparsableVersionException;
@@ -23,6 +24,7 @@ import nl.knaw.dans.bagit.exceptions.UnsupportedAlgorithmException;
 import nl.knaw.dans.bagit.reader.BagReader;
 import nl.knaw.dans.bagit.writer.MetadataWriter;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,24 +43,24 @@ public class BagInfoManager {
 
     public static Bag updateBagVersion(Path newBagDir, Path previousBagDir)
         throws IOException, UnparsableVersionException, MaliciousPathException, UnsupportedAlgorithmException, InvalidBagitFileFormatException, ParserConfigurationException, SAXException {
-        var now = ZonedDateTime
+        String now = ZonedDateTime
             .now(ZoneId.systemDefault())
             .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        var newBag = new BagReader().read(newBagDir);
-        var bagInfo = newBag.getMetadata();
+        Bag newBag = new BagReader().read(newBagDir);
+        Metadata bagInfo = newBag.getMetadata();
         bagInfo.remove("Is-Version-Of");
         bagInfo.remove("Created");
         bagInfo.add("Is-Version-Of", "urn:uuid:" + previousBagDir.getParent().getFileName());
         bagInfo.add("Created", now);
         if (isEmpty(bagInfo.get("Base-URN")) || isEmpty(bagInfo.get("Base-DOI"))) {
             // once added for the second bag, we don't need to add for subsequent bags
-            var idTypes = List.of("DOI", "URN");
-            var idElements = ((Element) readXml(newBagDir.resolve("metadata/dataset.xml"))
+            List<String> idTypes = List.of("DOI", "URN");
+            NodeList idElements = ((Element) readXml(newBagDir.resolve("metadata/dataset.xml"))
                 .getElementsByTagName("ddm:dcmiMetadata").item(0))
                 .getElementsByTagName("dct:identifier");
             for (int i = 0; i < idElements.getLength(); i++) {
-                var id = (Element) idElements.item(i);
-                var idType = id.getAttribute("xsi:type")
+                Element id = (Element) idElements.item(i);
+                String idType = id.getAttribute("xsi:type")
                     .replace("id-type:", "");
                 if (idTypes.contains(idType)) {
                     bagInfo.remove("Base-" + idType);

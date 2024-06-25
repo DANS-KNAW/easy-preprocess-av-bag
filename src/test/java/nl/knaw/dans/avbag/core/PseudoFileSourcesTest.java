@@ -16,6 +16,8 @@
 package nl.knaw.dans.avbag.core;
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
 import nl.knaw.dans.avbag.TestUtils;
 import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
@@ -35,7 +37,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_abort_when_dirs_do_not_exist() {
-        var pseudoFileSources = new PseudoFileSourcesConfig(
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             testDir.resolve("darkArchiveDir"),
             testDir.resolve("springfieldDir"),
             testDir.resolve("not-existing-sources.csv"));
@@ -48,7 +50,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_abort_when_csv_does_not_exist() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig(
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             createDirectories(testDir.resolve("darkArchiveDir")),
             createDirectories(testDir.resolve("springfieldDir")),
             testDir.resolve("sources.csv")
@@ -61,7 +63,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_abort_when_csv_is_a_dir() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig(
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             createDirectories(testDir.resolve("darkArchiveDir")),
             createDirectories(testDir.resolve("springfieldDir")),
             Path.of("src/test/resources/integration")
@@ -75,7 +77,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_abort_when_files_in_csv_do_not_exist() throws IOException {
-        var pseudoFileSources = new PseudoFileSourcesConfig(
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             createDirectories(testDir.resolve("darkArchiveDir")),
             createDirectories(testDir.resolve("springfieldDir")),
             Path.of("src/test/resources/integration/sources.csv")
@@ -89,8 +91,8 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_warn_empty_av_column() throws IOException {
-        var csv = testDir.resolve("sources.csv");
-        var pseudoFileSourcesConfig = new PseudoFileSourcesConfig(
+        Path csv = testDir.resolve("sources.csv");
+        PseudoFileSourcesConfig pseudoFileSourcesConfig = new PseudoFileSourcesConfig(
             Path.of("src/test/resources/integration/darkarchive"),
             Path.of("src/test/resources/integration/springfield"),
             csv
@@ -101,7 +103,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
             easy-file:7296382,easy-dataset:112582,,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,""");
 
         TestUtils.captureStdout();
-        var log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
+        ListAppender<ILoggingEvent> log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
 
         assertThatThrownBy(() -> new PseudoFileSources(pseudoFileSourcesConfig))
             .isInstanceOf(IllegalStateException.class)
@@ -113,8 +115,8 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_warn_empty_file_id_column() throws IOException {
-        var csv = testDir.resolve("sources.csv");
-        var pseudoFileSources = new PseudoFileSourcesConfig(
+        Path csv = testDir.resolve("sources.csv");
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             Path.of("src/test/resources/integration/darkarchive"),
             Path.of("src/test/resources/integration/springfield"),
             csv);
@@ -124,7 +126,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
             ,easy-dataset:112582,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,""");
 
         TestUtils.captureStdout();
-        var log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
+        ListAppender<ILoggingEvent> log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
 
         assertThatThrownBy(() -> new PseudoFileSources(pseudoFileSources))
             .isInstanceOf(IllegalStateException.class)
@@ -136,14 +138,14 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_not_throw() throws IOException {
-        var springfieldDir = "src/test/resources/integration/springfield";
-        var pseudoFileSources = new PseudoFileSourcesConfig(
+        String springfieldDir = "src/test/resources/integration/springfield";
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             Path.of("src/test/resources/integration/darkarchive"),
             Path.of(springfieldDir),
             Path.of("src/test/resources/integration/sources.csv")
         );
 
-        var sources = new PseudoFileSources(pseudoFileSources);
+        PseudoFileSources sources = new PseudoFileSources(pseudoFileSources);
 
         assertThat(sources.getDarkArchiveFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").keySet())
             .containsExactlyInAnyOrderElementsOf(Set.of(

@@ -37,6 +37,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createDirectories;
@@ -86,24 +88,24 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
     @AfterEach
     public void addToReport(TestInfo testInfo) throws Exception {
-        var testName = testInfo.getDisplayName().replace("()", "");
+        String testName = testInfo.getDisplayName().replace("()", "");
         try (Stream<Path> paths = Files.walk(testDir, 5)) {
-            var iterator = paths.filter(path ->
+            Iterator<Path> iterator = paths.filter(path ->
                 path.toString().endsWith("metadata/files.xml") || path.toString().endsWith("manifest-sha1.txt")
             ).iterator();
             while (iterator.hasNext()) {
-                var path = iterator.next();
-                var relativePath = testDir.relativize(path);
-                var backupPath = reportDir.resolve(testName).resolve(relativePath);
+                Path path = iterator.next();
+                Path relativePath = testDir.relativize(path);
+                Path backupPath = reportDir.resolve(testName).resolve(relativePath);
                 Files.createDirectories(backupPath.getParent());
                 Files.copy(path, backupPath, StandardCopyOption.REPLACE_EXISTING);
             }
         }
-        var logged = stdout.toString();
+        String logged = stdout.toString();
         if (!logged.isEmpty()) {
             String[] lines = logged.split("\n");
-            var filteredValue = "at org.junit";
-            var result = Arrays.stream(lines).reduce((prev, curr) ->
+            String filteredValue = "at org.junit";
+            String result = Arrays.stream(lines).reduce((prev, curr) ->
                     curr.contains(filteredValue)
                         ? prev + "... "
                         : prev + "\n" + curr
@@ -136,7 +138,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     @Test
     public void complains_about_already_converted_bag() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
-        var uuid = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
+        String uuid = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
         touch(convertedBags.resolve(uuid));
 
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
@@ -155,7 +157,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         assertThat(stagedBags).isEmptyDirectory();
 
         // all manifest-sha1.txt files should be unique
-        var manifests = new ArrayList<>();
+        ArrayList<Object> manifests = new ArrayList<>();
         collectManifests(manifests, inputBags);
         collectManifests(manifests, convertedBags);
         assertThat(new HashSet<>(manifests))
@@ -164,7 +166,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
     @Test
     public void creates_an_empty_second_bag_with_all_files_none_none() throws Exception {
-        var bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
+        String bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
 
         FileUtils.copyDirectory(
             integration.resolve("input-bags").resolve(bagParent).toFile(),
@@ -172,24 +174,24 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         );
 
         // removing all rights elements from files.xml defaults to None/None
-        var filesXmlFile = mutableInput.resolve(bagParent + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
-        var xmlLines = readAllLines(filesXmlFile).stream()
+        Path filesXmlFile = mutableInput.resolve(bagParent + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
+        List<String> xmlLines = readAllLines(filesXmlFile).stream()
             .filter(line -> !line.contains("ToRights"))
             .toList();
         writeString(filesXmlFile, String.join("\n", xmlLines));
 
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
-        var logLines = loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
+        List<String> logLines = loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
 
         // third bag aborted
-        var last = loggedEvents.list.get(logLines.size() - 1);
+        ILoggingEvent last = loggedEvents.list.get(logLines.size() - 1);
         assertThat(last.getFormattedMessage()).endsWith(bagParent + " failed, it may or may not have (incomplete) bags in target/test/IntegrationTest/staged-bags");
         assertThat(last.getLevel()).isEqualTo(Level.ERROR);
         assertThat(last.getThrowableProxy().getMessage()).endsWith("Not all springfield files in the mapping are present in the second bag");
 
-        var secondBagParent = loggedEvents.list.get(logLines.size() - 2).getFormattedMessage().split("## ")[1];
-        var secondBag = Files.list(stagedBags.resolve(secondBagParent)).toList().get(0);
+        String secondBagParent = loggedEvents.list.get(logLines.size() - 2).getFormattedMessage().split("## ")[1];
+        Path secondBag = Files.list(stagedBags.resolve(secondBagParent)).toList().get(0);
         assertThat(secondBag.resolve("manifest-sha1.txt"))
             .isEmptyFile();
         assertThat(secondBag.resolve("data"))
@@ -206,28 +208,28 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         // second bag will fail when a none/none without dct:source does not exist
 
-        var bagParent1 = "89e54b08-5f1f-452c-a551-0d35f75a3939";
-        var filesXmlFile1 = mutableInput.resolve(bagParent1 + "/dba86e2b-0665-4324-a401-3f5a24a7a2ab/metadata/files.xml");
-        var xmlLines1 = readAllLines(filesXmlFile1).stream()
+        String bagParent1 = "89e54b08-5f1f-452c-a551-0d35f75a3939";
+        Path filesXmlFile1 = mutableInput.resolve(bagParent1 + "/dba86e2b-0665-4324-a401-3f5a24a7a2ab/metadata/files.xml");
+        List<String> xmlLines1 = readAllLines(filesXmlFile1).stream()
             .filter(line -> !line.contains("dct:source"))
             .toList();
         writeString(filesXmlFile1, String.join("\n", xmlLines1));
 
         // second bag will fail when a none/none without dct:source does not exist
 
-        var bagParent2 = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
+        String bagParent2 = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
         FileUtils.delete(mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/data/original/bijlage Gb interviewer 08.pdf").toFile());
-        var filesXmlFile2 = mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
-        var xmlLines2 = readAllLines(filesXmlFile2).stream()
+        Path filesXmlFile2 = mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
+        List<String> xmlLines2 = readAllLines(filesXmlFile2).stream()
             .map(line -> !line.contains("visibleToRights") ? line : "<visibleToRights>NONE</visibleToRights>")
             .toList();
         writeString(filesXmlFile2, String.join("\n", xmlLines2));
 
         // third bag will fail when visibleToRights is missing for a springfield file
 
-        var bagParent3 = "993ec2ee-b716-45c6-b9d1-7190f98a200a";
-        var filesXmlFile3 = mutableInput.resolve(bagParent3 + "/e50fe0a3-554e-49a4-98f8-f4a32f19def9/metadata/files.xml");
-        var xmlLines3 = readAllLines(filesXmlFile3).stream()
+        String bagParent3 = "993ec2ee-b716-45c6-b9d1-7190f98a200a";
+        Path filesXmlFile3 = mutableInput.resolve(bagParent3 + "/e50fe0a3-554e-49a4-98f8-f4a32f19def9/metadata/files.xml");
+        List<String> xmlLines3 = readAllLines(filesXmlFile3).stream()
             .filter(line -> !line.contains("visibleToRights"))
             .toList();
         writeString(filesXmlFile3, String.join("\n", xmlLines3));
@@ -253,7 +255,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         assertHasLogMessageStartingWith("Creating revision 2: " + bagParent2);
         assertNoLogMessageStartingWith("Creating revision 3: " + bagParent2);
-        var bagEvent2 = getThrowableProxyWithLogMessageEqualTo(format(
+        IThrowableProxy bagEvent2 = getThrowableProxyWithLogMessageEqualTo(format(
             "{0} failed, it may or may not have (incomplete) bags in {1}", bagParent2, stagedBags
         ));
         assertThat(bagEvent2.getClassName()).isEqualTo(IOException.class.getCanonicalName());
@@ -262,7 +264,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         // assert failure on third bag
 
         assertHasLogMessageStartingWith("Creating revision 3: " + bagParent3);
-        var bagEvent3 = getThrowableProxyWithLogMessageEqualTo(format(
+        IThrowableProxy bagEvent3 = getThrowableProxyWithLogMessageEqualTo(format(
             "{0} failed, it may or may not have (incomplete) bags in {1}", bagParent3, stagedBags
         ));
         assertThat(bagEvent3.getMessage()).isEqualTo("""
@@ -301,7 +303,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     private void collectManifests(ArrayList<Object> manifests, Path convertedBags) throws IOException {
-        try (var files = Files.walk(convertedBags, 3)) {
+        try (Stream<Path> files = Files.walk(convertedBags, 3)) {
             files.filter(path -> path.getFileName().toString().equals("manifest-sha1.txt"))
                 .forEach(path -> manifests.add(readSorted(path)));
         }

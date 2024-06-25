@@ -60,13 +60,13 @@ public abstract class ManifestManager {
 
         // TODO Do the datasets have other big files?
         //  Then override visitFile and reuse values for paths not in fileIdToBagLocationMap.values().
-        var payLoadManifests = bag.getPayLoadManifests();
+        Set<Manifest> payLoadManifests = bag.getPayLoadManifests();
         modifyPayloads(payLoadManifests);
         ManifestWriter.writePayloadManifests(payLoadManifests, bagitDir, rootDir, fileEncoding);
 
-        var tagManifests = bag.getTagManifests();
-        var tagFilesMap = getManifestToDigestMap(tagManifests);
-        var visitor = getTagManifestsVistor(tagFilesMap);
+        Set<Manifest> tagManifests = bag.getTagManifests();
+        Map<Manifest, MessageDigest> tagFilesMap = getManifestToDigestMap(tagManifests);
+        CreateTagManifestsVistor visitor = getTagManifestsVistor(tagFilesMap);
         Files.walkFileTree(rootDir, visitor);
         replaceManifests(tagManifests, tagFilesMap);
         ManifestWriter.writeTagManifests(tagManifests, bagitDir, rootDir, fileEncoding);
@@ -88,8 +88,8 @@ public abstract class ManifestManager {
                  *
                  * Update: this is actually required in V1.0: https://tools.ietf.org/html/rfc8493#section-2.2.1
                  */
-                var isTagManifest = rootDir.relativize(path).getNameCount() == 1 &&
-                                    path.getFileName().toString().startsWith("tagmanifest-");
+                boolean isTagManifest = rootDir.relativize(path).getNameCount() == 1 &&
+                                        path.getFileName().toString().startsWith("tagmanifest-");
 
                 if (isTagManifest) {
                     return FileVisitResult.CONTINUE;
@@ -110,7 +110,7 @@ public abstract class ManifestManager {
     }
 
     private static Map<Manifest, MessageDigest> getManifestToDigestMap(Set<Manifest> manifests) throws NoSuchAlgorithmException {
-        var algorithms = manifests.stream().map(Manifest::getAlgorithm).toList();
+        List<nl.knaw.dans.bagit.hash.SupportedAlgorithm> algorithms = manifests.stream().map(Manifest::getAlgorithm).toList();
         return createManifestToMessageDigestMap(algorithms);
     }
 
@@ -119,14 +119,14 @@ public abstract class ManifestManager {
         new ManifestManager(bag) {
 
             protected void modifyPayloads(Set<Manifest> payLoadManifests) throws NoSuchAlgorithmException, IOException {
-                var payloadFilesMap = getManifestToDigestMap(payLoadManifests);
-                var beforeWalk = now().toNanoOfDay();
+                Map<Manifest, MessageDigest> payloadFilesMap = getManifestToDigestMap(payLoadManifests);
+                long beforeWalk = now().toNanoOfDay();
                 Files.walkFileTree(bag.getRootDir().resolve("data"), new CreatePayloadManifestsVistor(payloadFilesMap, true));
-                var afterWalk = now().toNanoOfDay();
+                long afterWalk = now().toNanoOfDay();
 
                 // statistics: is it worth to calculate only the changed files?
-                var depositDir = bag.getRootDir().getParent().getFileName().toString();
-                var versionOf = bag.getMetadata().get("Is-version-of");
+                String depositDir = bag.getRootDir().getParent().getFileName().toString();
+                List<String> versionOf = bag.getMetadata().get("Is-version-of");
                 if (!isEmpty(versionOf)) {
                     depositDir = versionOf.get(0).replace("urn:uuid:", "");
                 }

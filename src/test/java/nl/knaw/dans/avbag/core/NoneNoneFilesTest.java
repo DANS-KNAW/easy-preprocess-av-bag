@@ -17,6 +17,7 @@ package nl.knaw.dans.avbag.core;
 
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,8 +33,8 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_throw_because_a_file_to_delete_does_not_exist() throws Exception {
-        var bagDir = testDir.resolve("1234/5678");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("1234/5678");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         writeString(filesXml, """
             <?xml version='1.0' encoding='UTF-8'?>
@@ -48,8 +49,8 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
                 </file>
             </files>""");
 
-        var noneNoneFiles = new NoneNoneFiles(bagDir);
-        var filesXmlDoc = XmlUtil.readXml(filesXml);
+        NoneNoneFiles noneNoneFiles = new NoneNoneFiles(bagDir);
+        Document filesXmlDoc = XmlUtil.readXml(filesXml);
 
         assertThatThrownBy(() -> noneNoneFiles
             .removeNoneNone(filesXmlDoc)
@@ -59,8 +60,8 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_return_removed_files() throws Exception {
-        var bagDir = testDir.resolve("1234/5678");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("1234/5678");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         createDirectories(bagDir.resolve("data"));
         touch(bagDir.resolve("data/some.txt"));
@@ -92,8 +93,8 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
                 </file>
             </files>""");
 
-        var noneNoneFiles = new NoneNoneFiles(bagDir);
-        var filesXmlDoc = XmlUtil.readXml(filesXml);
+        NoneNoneFiles noneNoneFiles = new NoneNoneFiles(bagDir);
+        Document filesXmlDoc = XmlUtil.readXml(filesXml);
 
         assertThat(noneNoneFiles.removeNoneNone(filesXmlDoc))
             .containsExactlyInAnyOrderElementsOf(List.of(Path.of("data/some.txt"), Path.of("data/some2.txt")));
@@ -101,8 +102,8 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
 
     @Test
     public void empty_files_xml_should_return_empty_list() throws Exception {
-        var bagDir = testDir.resolve("1234/5678");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("1234/5678");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         writeString(filesXml, """
             <?xml version='1.0' encoding='UTF-8'?>
@@ -112,8 +113,8 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
                 xmlns:dct="http://purl.org/dc/terms/">
             </files>""");
 
-        var noneNoneFiles = new NoneNoneFiles(bagDir);
-        var filesXmlDoc = XmlUtil.readXml(filesXml);
+        NoneNoneFiles noneNoneFiles = new NoneNoneFiles(bagDir);
+        Document filesXmlDoc = XmlUtil.readXml(filesXml);
 
         assertThat(noneNoneFiles.removeNoneNone(filesXmlDoc))
             .isEmpty();

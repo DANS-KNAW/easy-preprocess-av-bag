@@ -51,8 +51,8 @@ public class PlaceHolders {
     }
 
     public boolean hasSameFileIds(PseudoFileSources pseudoFileSources) {
-        var mappedFileIds = pseudoFileSources.getDarkArchiveFiles(bagParent.toString()).keySet();
-        var replacedFileIds = identifierToDestMap.keySet();
+        Set<String> mappedFileIds = pseudoFileSources.getDarkArchiveFiles(bagParent.toString()).keySet();
+        Set<String> replacedFileIds = identifierToDestMap.keySet();
 
         // Find the differences
         Set<String> onlyInMapping = new HashSet<>(mappedFileIds);
@@ -70,28 +70,28 @@ public class PlaceHolders {
     }
 
     public String getDestPath(String identifier) {
-        var path = identifierToDestMap.get(identifier);
+        Path path = identifierToDestMap.get(identifier);
         return (path != null) ? path.toString() : null;
     }
 
     private void find() throws IOException {
 
-        var fileNodes = filesXml.getElementsByTagName("file");
+        NodeList fileNodes = filesXml.getElementsByTagName("file");
         for (int i = 0; i < fileNodes.getLength(); i++) {
-            var fileElement = (Element) fileNodes.item(i);
-            var sourceNode = fileElement.getElementsByTagName("dct:source");
+            Element fileElement = (Element) fileNodes.item(i);
+            NodeList sourceNode = fileElement.getElementsByTagName("dct:source");
             if (sourceNode.getLength() > 0) {
                 NodeList identifierNodes = fileElement.getElementsByTagName("dct:identifier");
                 if (identifierNodes.getLength() == 0) {
                     log.error("No <dct:identifier> found: {} {}", bagParent, XmlUtil.serializeNode(fileElement));
                 }
                 else {
-                    var filePath = fileElement.getAttribute("filepath");
+                    String filePath = fileElement.getAttribute("filepath");
                     if (isEmpty(filePath)) {
                         log.error("No filepath attribute found: {} {}", bagParent, XmlUtil.serializeNode(fileElement));
                     }
                     else if (0 == Files.size(bagDir.resolve(filePath))) {
-                        var identifier = identifierNodes.item(0).getTextContent();
+                        String identifier = identifierNodes.item(0).getTextContent();
                         identifierToDestMap.put(identifier, Path.of(filePath));
                     }
                 }

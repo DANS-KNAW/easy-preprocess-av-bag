@@ -17,12 +17,14 @@ package nl.knaw.dans.avbag.core;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
 import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 import static java.nio.file.Files.createDirectories;
@@ -55,8 +57,8 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
     @Test
     void constructor_reports_first_not_existing_file() throws Exception {
-        var bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         writeString(filesXml, withPayload);
 
@@ -67,8 +69,8 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
     @Test
     void constructor_reports_other_not_existing_file() throws Exception {
-        var bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         writeString(filesXml, withPayload);
 
@@ -82,8 +84,8 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
     @Test
     void constructor_reports_missing_identifier() throws Exception {
-        var bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
 
         // XML content with missing <dct:identifier>
@@ -101,11 +103,11 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         writeString(filesXml, xmlContent);
 
         captureStdout();
-        var log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
+        ListAppender<ILoggingEvent> log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
 
         new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
-        var lines = log.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
+        List<String> lines = log.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
         assertThat(lines).hasSize(1);
         assertThat(lines.get(0)).isEqualTo(
             """
@@ -117,8 +119,8 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
     @Test
     void contructor_reports_missing_file_attribute() throws Exception {
-        var bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
 
         // XML content with missing filepath attribute
@@ -137,11 +139,11 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         writeString(filesXml, xmlContent);
 
         captureStdout();
-        var log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
+        ListAppender<ILoggingEvent> log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
 
         new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
-        var lines = log.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
+        List<String> lines = log.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
         assertThat(lines).hasSize(1);
         assertThat(lines.get(0)).isEqualTo(
             """
@@ -153,52 +155,52 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
     @Test
     void getDestPath_return_path_attribute() throws Exception {
-        var bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         writeString(filesXml, withPayload);
 
         createDirectories(bagDir.resolve("data"));
         touch(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"));
         touch(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
-        var placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        PlaceHolders placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
         assertThat(placeHolders.getDestPath("easy-file:6227174")).isEqualTo("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf");
     }
 
     @Test
     void hasSameFileIds_is_happy() throws Exception {
-        var bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         writeString(filesXml, withPayload);
 
         createDirectories(bagDir.resolve("data"));
         writeString(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"), "content");
         touch(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
-        var placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        PlaceHolders placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
-        var sources = new PseudoFileSources(getPseudoFileSourcesConfig());
+        PseudoFileSources sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 
         assertTrue(placeHolders.hasSameFileIds(sources));
     }
 
     @Test
     void hasSameFileIds_logs_file_missing_in_PseudoFileSources() throws Exception {
-        var bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         writeString(filesXml, withPayload);
 
         createDirectories(bagDir.resolve("data"));
         touch(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"));
         touch(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
-        var placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        PlaceHolders placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
-        var sources = new PseudoFileSources(getPseudoFileSourcesConfig());
+        PseudoFileSources sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 
         captureStdout();
-        var log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
+        ListAppender<ILoggingEvent> log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
 
         assertFalse(placeHolders.hasSameFileIds(sources));
         assertThat(log.list.stream().map(ILoggingEvent::getFormattedMessage).toList())
@@ -210,10 +212,10 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
     @Test
     void hasSameFileIds_logs_file_missing_in_files_xml() throws Exception {
-        var bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
-        var filesXml = bagDir.resolve("metadata/files.xml");
+        Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
+        Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
-        var withoutPayLoad = """
+        String withoutPayLoad = """
             <?xml version='1.0' encoding='UTF-8'?>
             <files xsi:schemaLocation="http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -225,12 +227,12 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         createDirectories(bagDir.resolve("data"));
         touch(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"));
         touch(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
-        var placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        PlaceHolders placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
 
-        var sources = new PseudoFileSources(getPseudoFileSourcesConfig());
+        PseudoFileSources sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 
         captureStdout();
-        var log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
+        ListAppender<ILoggingEvent> log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
 
         assertFalse(placeHolders.hasSameFileIds(sources));
         assertThat(log.list.stream().map(ILoggingEvent::getFormattedMessage).toList())

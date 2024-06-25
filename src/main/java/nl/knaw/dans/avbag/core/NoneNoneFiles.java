@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class NoneNoneFiles {
 
@@ -41,10 +42,10 @@ public class NoneNoneFiles {
         for (int i = 0; i < fileList.getLength(); i++) {
             Element fileElement = (Element) fileList.item(i);
             if (isNone(fileElement, "accessibleToRights") && isNone(fileElement, "visibleToRights")) {
-                var filepath = fileElement.getAttribute("filepath");
+                String filepath = fileElement.getAttribute("filepath");
                 filesWithNoneNone.add(Path.of(filepath));
                 fileElement.getParentNode().removeChild(fileElement);
-                var file = bagDir.resolve(filepath);
+                Path file = bagDir.resolve(filepath);
                 if (!file.toFile().delete()) {
                     throw new IOException("%s: Could not delete %s".formatted(bagDir.getParent().getFileName(), file));
                 }
@@ -58,7 +59,7 @@ public class NoneNoneFiles {
 
     private static void deleteIfEmpty(Path path) throws IOException {
         if (Files.isDirectory(path)) {
-            try (var list = Files.list(path)) {
+            try (Stream<Path> list = Files.list(path)) {
                 if (list.findAny().isEmpty()) {
                     Files.deleteIfExists(path);
                     deleteIfEmpty(path.getParent());
@@ -68,7 +69,7 @@ public class NoneNoneFiles {
     }
 
     private static boolean isNone(Node fileElement, String tag) {
-        var elements = ((Element) fileElement).getElementsByTagName(tag);
+        NodeList elements = ((Element) fileElement).getElementsByTagName(tag);
         if (elements.getLength() == 0)
             return true;
         return "NONE".equals(elements.item(0).getTextContent());

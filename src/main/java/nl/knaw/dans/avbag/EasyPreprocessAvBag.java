@@ -62,7 +62,7 @@ public class EasyPreprocessAvBag extends AbstractCommandLineApp<EasyPreprocessAv
     @Override
     public Integer call() {
         try {
-            var pseudoFileSources = new PseudoFileSources(config.getPseudoFileSources());
+            PseudoFileSources pseudoFileSources = new PseudoFileSources(config.getPseudoFileSources());
             new AVConverter(inputDir, outputDir, config.getStagingDir(), pseudoFileSources)
                 .convertAll();
             return 0;

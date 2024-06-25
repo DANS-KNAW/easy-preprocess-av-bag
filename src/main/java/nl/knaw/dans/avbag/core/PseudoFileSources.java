@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -58,18 +59,18 @@ public class PseudoFileSources {
             return Collections.emptyMap();
         }
         Map<String, Path> map = new HashMap<>();
-        for (var entry : innerMap.entrySet()) {
+        for (Map.Entry<String, String> entry : innerMap.entrySet()) {
             map.put(entry.getKey(), baseDir.resolve(entry.getValue()));
         }
         return Collections.unmodifiableMap(map);
     }
 
     public PseudoFileSources(PseudoFileSourcesConfig pseudoFileSources) throws IOException {
-        var dirs = new Path[] { pseudoFileSources.getDarkarchiveDir(), pseudoFileSources.getSpringfieldDir() };
+        Path[] dirs = new Path[] { pseudoFileSources.getDarkarchiveDir(), pseudoFileSources.getSpringfieldDir() };
         if (!Arrays.stream(dirs).filter(Objects::isNull).toList().isEmpty()) {
             throw new IllegalArgumentException("PseudoFileSourcesConfig is incomplete");
         }
-        var notExisting = Arrays.stream(dirs).filter(dir -> !FileUtils.isDirectory(dir.toFile())).toList();
+        List<Path> notExisting = Arrays.stream(dirs).filter(dir -> !FileUtils.isDirectory(dir.toFile())).toList();
         if (!notExisting.isEmpty()) {
             throw new IOException("Not existing or not a directory: " + notExisting);
         }
@@ -78,11 +79,11 @@ public class PseudoFileSources {
         this.darkArchiveDir = pseudoFileSources.getDarkarchiveDir();
         this.springfieldDir = pseudoFileSources.getSpringfieldDir();
 
-        var notExistingSpringfield = bagParentToFileToSpringField.values().stream()
+        List<Path> notExistingSpringfield = bagParentToFileToSpringField.values().stream()
             .flatMap(innerMap -> innerMap.values().stream())
             .map(springfieldDir::resolve)
             .filter(path -> !Files.exists(path)).toList();
-        var notExistingAV = bagParentToFileToAV.values().stream()
+        List<Path> notExistingAV = bagParentToFileToAV.values().stream()
             .flatMap(innerMap -> innerMap.values().stream())
             .map(darkArchiveDir::resolve)
             .filter(path -> !Files.exists(path)).toList();
@@ -97,13 +98,13 @@ public class PseudoFileSources {
             throw new IOException("Does not exist or is not a file: " + filePath);
         }
         try (CSVParser csvParser = CSVParser.parse(filePath, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withHeader())) {
-            var count = 0;
+            int count = 0;
             for (CSVRecord csvRecord : csvParser) {
-                var pathInAVdDir = csvRecord.get("path_in_AV_dir");
-                var pathInSpringfieldDir = csvRecord.get("path_in_springfield_dir");
-                var fileId = csvRecord.get("easy_file_id");
+                String pathInAVdDir = csvRecord.get("path_in_AV_dir");
+                String pathInSpringfieldDir = csvRecord.get("path_in_springfield_dir");
+                String fileId = csvRecord.get("easy_file_id");
                 if (isNotEmpty(pathInAVdDir) && isNotEmpty(fileId)) {
-                    var bagParent = Path.of(pathInAVdDir).getName(0).toString();
+                    String bagParent = Path.of(pathInAVdDir).getName(0).toString();
                     bagParentToFileToAV.computeIfAbsent(
                         bagParent, k -> new HashMap<>()
                     ).put(fileId, pathInAVdDir);

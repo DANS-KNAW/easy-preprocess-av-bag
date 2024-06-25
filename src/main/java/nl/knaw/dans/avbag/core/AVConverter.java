@@ -31,7 +31,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -57,12 +60,12 @@ public class AVConverter {
     }
 
     public void convertAll() throws IOException {
-        try (var pathStream = Files.list(stagingDir)) {
+        try (java.util.stream.Stream<Path> pathStream = Files.list(stagingDir)) {
             if (pathStream.findAny().isPresent()) {
                 throw new IllegalStateException("The staging directory is not empty. Please empty the directory and try again.");
             }
         }
-        try (var pathStream = Files.walk(inputDir, 2)) {
+        try (java.util.stream.Stream<Path> pathStream = Files.walk(inputDir, 2)) {
             pathStream.filter(this::notSelfOrChild)
                 .forEach(this::convertOne);
         }
@@ -74,7 +77,7 @@ public class AVConverter {
     }
 
     private long getCount(Path inputDir) throws IOException {
-        try (var list = Files.list(inputDir)) {
+        try (Stream<Path> list = Files.list(inputDir)) {
             return list.count();
         }
     }
@@ -84,14 +87,14 @@ public class AVConverter {
     }
 
     private void convertOne(Path bag) {
-        var bagParent = bag.getParent().getFileName();
+        Path bagParent = bag.getParent().getFileName();
         if (outputDir.resolve(bagParent).toFile().exists()) {
             log.error("Skipped {}, it exists in {}", bagParent, outputDir);
             return;
         }
         try {
-            var filesXml = readXml(bag.resolve("metadata/files.xml"));
-            var ph = new PlaceHolders(bag, filesXml);
+            Document filesXml = readXml(bag.resolve("metadata/files.xml"));
+            PlaceHolders ph = new PlaceHolders(bag, filesXml);
             if (ph.hasSameFileIds(pseudoFileSources)) {
                 createBags(bag, ph, filesXml);
             }
@@ -106,25 +109,25 @@ public class AVConverter {
     private void createBags(Path inputBagDir, PlaceHolders placeHolders, Document filesXml)
         throws IOException, TransformerException, MaliciousPathException, UnparsableVersionException, UnsupportedAlgorithmException,
         InvalidBagitFileFormatException, NoSuchAlgorithmException, ParserConfigurationException, SAXException {
-        var inputBagParentName = inputBagDir.getParent().getFileName().toString();
-        var revision1 = stagingDir.resolve(inputBagParentName).resolve(inputBagDir.getFileName());
-        var revision2 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
-        var revision3 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
+        String inputBagParentName = inputBagDir.getParent().getFileName().toString();
+        Path revision1 = stagingDir.resolve(inputBagParentName).resolve(inputBagDir.getFileName());
+        Path revision2 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
+        Path revision3 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
 
         log.info("Creating revision 1: {} ### {}", inputBagParentName, revision1.getParent().getFileName());
         copyDirectory(inputBagDir.toFile(), revision1.toFile());
-        for (var entry : pseudoFileSources.getDarkArchiveFiles(inputBagParentName).entrySet()) {
+        for (Map.Entry<String, Path> entry : pseudoFileSources.getDarkArchiveFiles(inputBagParentName).entrySet()) {
             replacePayloadFile(revision1, entry.getValue(), placeHolders.getDestPath(entry.getKey()));
         }
         updateManifests(new BagReader().read(revision1));
 
         log.info("Creating revision 2: {} ### {}", inputBagParentName, revision2.getParent().getFileName());
         copyDirectory(revision1.toFile(), revision2.toFile());
-        var removedFiles = new NoneNoneFiles(revision2).removeNoneNone(filesXml);
+        List<Path> removedFiles = new NoneNoneFiles(revision2).removeNoneNone(filesXml);
         XmlUtil.writeFilesXml(revision2, filesXml);
         removePayloadsFromManifest(removedFiles, updateBagVersion(revision2, revision1));
 
-        var springfieldFiles = new SpringfieldFiles(revision3, filesXml, pseudoFileSources.getSpringFieldFiles(inputBagParentName));
+        SpringfieldFiles springfieldFiles = new SpringfieldFiles(revision3, filesXml, pseudoFileSources.getSpringFieldFiles(inputBagParentName));
         if (springfieldFiles.hasFilesToAdd()) {
             log.info("Creating revision 3: {} ### {}", inputBagParentName, revision3.getParent().getFileName());
             copyDirectory(revision2.toFile(), revision3.toFile());
@@ -149,8 +152,8 @@ public class AVConverter {
     }
 
     private void moveStaged(Path bagDir) throws IOException {
-        var source = bagDir.getParent();
-        var destination = outputDir.resolve(source.getFileName());
+        Path source = bagDir.getParent();
+        Path destination = outputDir.resolve(source.getFileName());
         FileUtils.moveDirectory(source.toFile(), destination.toFile());
     }
 
