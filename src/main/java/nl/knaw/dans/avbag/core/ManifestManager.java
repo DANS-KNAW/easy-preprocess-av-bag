@@ -34,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.time.LocalTime.now;
 import static nl.knaw.dans.bagit.hash.Hasher.createManifestToMessageDigestMap;
@@ -110,7 +111,7 @@ public abstract class ManifestManager {
     }
 
     private static Map<Manifest, MessageDigest> getManifestToDigestMap(Set<Manifest> manifests) throws NoSuchAlgorithmException {
-        List<nl.knaw.dans.bagit.hash.SupportedAlgorithm> algorithms = manifests.stream().map(Manifest::getAlgorithm).toList();
+        List<nl.knaw.dans.bagit.hash.SupportedAlgorithm> algorithms = manifests.stream().map(Manifest::getAlgorithm).collect(Collectors.toList());
         return createManifestToMessageDigestMap(algorithms);
     }
 
