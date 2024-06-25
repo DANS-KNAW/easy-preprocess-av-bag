@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
+
 public class NoneNoneFiles {
 
     private final Path bagDir;
@@ -47,7 +49,7 @@ public class NoneNoneFiles {
                 fileElement.getParentNode().removeChild(fileElement);
                 Path file = bagDir.resolve(filepath);
                 if (!file.toFile().delete()) {
-                    throw new IOException("%s: Could not delete %s".formatted(bagDir.getParent().getFileName(), file));
+                    throw new IOException(format("%s: Could not delete %s",bagDir.getParent().getFileName(), file));
                 }
                 deleteIfEmpty(file.getParent());
                 // Since we're modifying the list we're iterating over, decrement i to adjust for the next iteration.

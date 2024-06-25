@@ -16,7 +16,7 @@
 
 package nl.knaw.dans.avbag.config;
 
-import io.dropwizard.core.Configuration;
+import io.dropwizard.Configuration;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;

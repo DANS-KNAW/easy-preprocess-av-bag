@@ -100,8 +100,7 @@ public class AVConverter {
             }
         }
         catch (Exception e) {
-            log.error("%s failed, it may or may not have (incomplete) bags in %s"
-                .formatted(bag.getParent().getFileName(), stagingDir), e
+            log.error(String.valueOf(bag.getParent().getFileName()) + " failed, it may or may not have (incomplete) bags in " + stagingDir, e
             );
         }
     }
