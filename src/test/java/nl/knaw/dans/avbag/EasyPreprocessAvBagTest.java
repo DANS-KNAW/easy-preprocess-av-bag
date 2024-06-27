@@ -15,11 +15,19 @@
  */
 package nl.knaw.dans.avbag;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createDirectories;
 import static nl.knaw.dans.lib.util.AbstractCommandLineApp.CONFIG_FILE_KEY;
 import static nl.knaw.dans.lib.util.AbstractCommandLineApp.EXAMPLE_CONFIG_FILE_KEY;
 
@@ -27,10 +35,29 @@ public class EasyPreprocessAvBagTest extends AbstractTestWithTestDir {
 
     @Disabled("For debugging purposes, the main method of EasyPreprocessAvBag would abort when executed in a suite")
     @Test
-    public void test_command_line() throws Exception {
-        String[] args = Arrays.asList("convert", "in", "out").toArray(new String[0]);
-        System.setProperty(CONFIG_FILE_KEY, testDir.resolve("src/test/resources/debug-etc/config.yml").toString());
-        System.setProperty(EXAMPLE_CONFIG_FILE_KEY, "src/test/resources/debug-etc/config.yml");
+    public void integration() throws Exception {
+        Path staging = testDir.resolve("staging");
+        Path config = testDir.resolve("config.yml");
+        Path integration = Paths.get("src/test/resources/integration");
+        List<String> lines = Files.readAllLines(Paths.get("src/test/resources/debug-etc/config.yml"))
+            .stream().map(line -> line
+                .replaceAll("stagingDir: .*", "stagingDir: " + staging)
+                .replace("currentLogFilename: data", "currentLogFilename: " + testDir.resolve("current.log"))
+                .replace(": data", ": " + integration)
+            ).collect(Collectors.toList());
+
+        Path out = testDir.resolve("out");
+        createDirectories(staging);
+        createDirectories(out);
+        Files.write(config, lines);
+        File mutableInput = testDir.resolve("mutable-input").toFile();
+        FileUtils.copyDirectory(integration.resolve("input-bags").toFile(), mutableInput);
+
+        // TODO copy input-bags to testDir
+        String[] args = Arrays.asList("convert", mutableInput.toString(), out.toString()).toArray(new String[0]);
+
+        System.setProperty(CONFIG_FILE_KEY, config.toString());
+        System.setProperty(EXAMPLE_CONFIG_FILE_KEY, config.toString());
         EasyPreprocessAvBag.main(args);
     }
 }

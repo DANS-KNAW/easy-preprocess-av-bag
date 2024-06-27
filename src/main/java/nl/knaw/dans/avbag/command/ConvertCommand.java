@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.avbag.command;
 
+import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.avbag.core.AVConverter;
 import nl.knaw.dans.avbag.core.PseudoFileSources;
 import picocli.CommandLine;
@@ -24,6 +25,10 @@ import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
+import static nl.knaw.dans.AbstractCommandLineApp.CONFIG_FILE_KEY;
+import static nl.knaw.dans.lib.util.AbstractCommandLineApp.EXAMPLE_CONFIG_FILE_KEY;
+
+@Slf4j
 @Command(
     name = "convert",
     mixinStandardHelpOptions = true,
@@ -50,6 +55,8 @@ public class ConvertCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        log.warn(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
+        log.warn(System.getProperty(CONFIG_FILE_KEY));
         try {
             new AVConverter(inputDir, outputDir, stagingDir, pseudoFileSources)
                 .convertAll();
