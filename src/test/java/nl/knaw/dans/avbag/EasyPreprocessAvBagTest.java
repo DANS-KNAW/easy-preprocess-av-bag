@@ -18,22 +18,19 @@ package nl.knaw.dans.avbag;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 
-import static java.util.Collections.singletonList;
 import static nl.knaw.dans.lib.util.AbstractCommandLineApp.CONFIG_FILE_KEY;
 import static nl.knaw.dans.lib.util.AbstractCommandLineApp.EXAMPLE_CONFIG_FILE_KEY;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class EasyPreprocessAvBagTest extends AbstractTestWithTestDir {
 
-    @Disabled("This test serves debugging, the main method of EasyPreprocessAvBag would abort when executed in a suite")
+    @Disabled("For debugging purposes, the main method of EasyPreprocessAvBag would abort when executed in a suite")
     @Test
-    public void testHelp() throws Exception {
-        ByteArrayOutputStream out = TestUtils.captureStdout();
-        String[] args = singletonList("--help").toArray(new String[0]);
-        System.setProperty(CONFIG_FILE_KEY, testDir.resolve("does-not-exit.yml").toString());
-        System.setProperty(EXAMPLE_CONFIG_FILE_KEY, "src/main/assembly/dist/cfg/example-config.yml");
+    public void test_command_line() throws Exception {
+        String[] args = Arrays.asList("convert", "in", "out").toArray(new String[0]);
+        System.setProperty(CONFIG_FILE_KEY, testDir.resolve("src/test/resources/debug-etc/config.yml").toString());
+        System.setProperty(EXAMPLE_CONFIG_FILE_KEY, "src/test/resources/debug-etc/config.yml");
         EasyPreprocessAvBag.main(args);
     }
 }
