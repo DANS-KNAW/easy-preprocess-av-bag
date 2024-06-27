@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 
 import static nl.knaw.dans.avbag.core.XmlUtil.readXml;
@@ -54,7 +55,7 @@ public class BagInfoManager {
         bagInfo.add("Created", now);
         if (isEmpty(bagInfo.get("Base-URN")) || isEmpty(bagInfo.get("Base-DOI"))) {
             // once added for the second bag, we don't need to add for subsequent bags
-            List<String> idTypes = List.of("DOI", "URN");
+            List<String> idTypes = Arrays.asList("DOI", "URN");
             NodeList idElements = ((Element) readXml(newBagDir.resolve("metadata/dataset.xml"))
                 .getElementsByTagName("ddm:dcmiMetadata").item(0))
                 .getElementsByTagName("dct:identifier");

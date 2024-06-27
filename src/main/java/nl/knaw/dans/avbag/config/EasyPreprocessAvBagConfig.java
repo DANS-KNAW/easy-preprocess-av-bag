@@ -20,6 +20,7 @@ import io.dropwizard.Configuration;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
@@ -27,6 +28,7 @@ import java.nio.file.Path;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
+@NoArgsConstructor
 public class EasyPreprocessAvBagConfig extends Configuration {
 
     @NotNull
