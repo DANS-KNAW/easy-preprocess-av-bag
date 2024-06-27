@@ -23,6 +23,7 @@ import org.w3c.dom.NodeList;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -45,11 +46,11 @@ public class NoneNoneFiles {
             Element fileElement = (Element) fileList.item(i);
             if (isNone(fileElement, "accessibleToRights") && isNone(fileElement, "visibleToRights")) {
                 String filepath = fileElement.getAttribute("filepath");
-                filesWithNoneNone.add(Path.of(filepath));
+                filesWithNoneNone.add(Paths.get(filepath));
                 fileElement.getParentNode().removeChild(fileElement);
                 Path file = bagDir.resolve(filepath);
                 if (!file.toFile().delete()) {
-                    throw new IOException(format("%s: Could not delete %s",bagDir.getParent().getFileName(), file));
+                    throw new IOException(format("%s: Could not delete %s", bagDir.getParent().getFileName(), file));
                 }
                 deleteIfEmpty(file.getParent());
                 // Since we're modifying the list we're iterating over, decrement i to adjust for the next iteration.
@@ -62,7 +63,7 @@ public class NoneNoneFiles {
     private static void deleteIfEmpty(Path path) throws IOException {
         if (Files.isDirectory(path)) {
             try (Stream<Path> list = Files.list(path)) {
-                if (list.findAny().isEmpty()) {
+                if (!list.iterator().hasNext()) {
                     Files.deleteIfExists(path);
                     deleteIfEmpty(path.getParent());
                 }

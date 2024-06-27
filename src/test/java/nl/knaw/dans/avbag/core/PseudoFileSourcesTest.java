@@ -25,12 +25,14 @@ import org.assertj.core.api.AbstractThrowableAssert;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Set;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createDirectories;
-import static java.nio.file.Files.writeString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
@@ -67,7 +69,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
         PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             createDirectories(testDir.resolve("darkArchiveDir")),
             createDirectories(testDir.resolve("springfieldDir")),
-            Path.of("src/test/resources/integration")
+            Paths.get("src/test/resources/integration")
         );
         AbstractThrowableAssert<?, ? extends Throwable> abstractThrowableAssert = assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
@@ -81,7 +83,7 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
         PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             createDirectories(testDir.resolve("darkArchiveDir")),
             createDirectories(testDir.resolve("springfieldDir")),
-            Path.of("src/test/resources/integration/sources.csv")
+            Paths.get("src/test/resources/integration/sources.csv")
         );
         assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
@@ -94,15 +96,15 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     public void should_warn_empty_av_column() throws IOException {
         Path csv = testDir.resolve("sources.csv");
         PseudoFileSourcesConfig pseudoFileSourcesConfig = new PseudoFileSourcesConfig(
-            Path.of("src/test/resources/integration/darkarchive"),
-            Path.of("src/test/resources/integration/springfield"),
+            Paths.get("src/test/resources/integration/darkarchive"),
+            Paths.get("src/test/resources/integration/springfield"),
             csv
         );
         createDirectories(testDir);
-        writeString(csv, String.join("\n", List.of(
+        Files.write(csv, String.join("\n", Arrays.asList(
             "easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir",
             "easy-file:7296382,easy-dataset:112582,,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,")
-        ));
+        ).getBytes(UTF_8));
 
         TestUtils.captureStdout();
         ListAppender<ILoggingEvent> log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
@@ -119,14 +121,14 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     public void should_warn_empty_file_id_column() throws IOException {
         Path csv = testDir.resolve("sources.csv");
         PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
-            Path.of("src/test/resources/integration/darkarchive"),
-            Path.of("src/test/resources/integration/springfield"),
+            Paths.get("src/test/resources/integration/darkarchive"),
+            Paths.get("src/test/resources/integration/springfield"),
             csv);
         createDirectories(testDir);
-        writeString(csv, String.join("\n", List.of(
+        Files.write(csv, String.join("\n", Arrays.asList(
             "easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir",
             ",easy-dataset:112582,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,"
-        )));
+        )).getBytes(UTF_8));
 
         TestUtils.captureStdout();
         ListAppender<ILoggingEvent> log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
@@ -143,24 +145,24 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     public void should_not_throw() throws IOException {
         String springfieldDir = "src/test/resources/integration/springfield";
         PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
-            Path.of("src/test/resources/integration/darkarchive"),
-            Path.of(springfieldDir),
-            Path.of("src/test/resources/integration/sources.csv")
+            Paths.get("src/test/resources/integration/darkarchive"),
+            Paths.get(springfieldDir),
+            Paths.get("src/test/resources/integration/sources.csv")
         );
 
         PseudoFileSources sources = new PseudoFileSources(pseudoFileSources);
 
         assertThat(sources.getDarkArchiveFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").keySet())
-            .containsExactlyInAnyOrderElementsOf(Set.of(
+            .containsExactlyInAnyOrderElementsOf(new HashSet<>(Arrays.asList(
                 "easy-file:8322137", "easy-file:8322136", "easy-file:8322141", "easy-file:8322138"
-            ));
+            )));
         assertThat(sources.getSpringFieldFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").keySet())
-            .containsExactlyInAnyOrderElementsOf(Set.of(
+            .containsExactlyInAnyOrderElementsOf(new HashSet<>(Arrays.asList(
                 "easy-file:8322141"
-            ));
+            )));
         assertThat(sources.getSpringFieldFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").values())
-            .containsExactlyInAnyOrderElementsOf(Set.of(
-                Path.of(springfieldDir + "/domain/dans/user/NIOD/video/148/rawvideo/2/JKKV_2007_Eindpunt_Sobibor_SCHELVIS.mp4")
-            ));
+            .containsExactlyInAnyOrderElementsOf(new HashSet<>(Arrays.asList(
+                Paths.get(springfieldDir + "/domain/dans/user/NIOD/video/148/rawvideo/2/JKKV_2007_Eindpunt_Sobibor_SCHELVIS.mp4")
+            )));
     }
 }

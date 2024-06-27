@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.avbag;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -26,24 +27,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class EasyPreprocessAvBagTest extends AbstractTestWithTestDir {
 
+    @Disabled("This test serves debugging, the main method of EasyPreprocessAvBag would abort when executed in a suite")
     @Test
     public void testHelp() throws Exception {
-        //        var lines = readAllLines(new File("src/test/resources/debug-etc/config.yml").toPath())
-        //            .stream().map(line ->
-        //                line.replace("data/", "src/test/resources/integration/")
-        //            ).toList();
-        //        writeString(testDir.resolve("config.yml"), String.join("\n", lines));
-
         ByteArrayOutputStream out = TestUtils.captureStdout();
         String[] args = singletonList("--help").toArray(new String[0]);
-        System.setProperty(CONFIG_FILE_KEY, testDir.resolve("doe-not-exit.yml").toString());
+        System.setProperty(CONFIG_FILE_KEY, testDir.resolve("does-not-exit.yml").toString());
         System.setProperty(EXAMPLE_CONFIG_FILE_KEY, "src/main/assembly/dist/cfg/example-config.yml");
-
-        //        var config = new EasyPreprocessAvBagConfig(
-        //            new PseudoFileSourcesConfig(Path.of(""),Path.of(""),Path.of("")),
-        //            testDir.resolve("staging")
-        //        );
         EasyPreprocessAvBag.main(args);
-        assertThat(out.toString()).isEqualTo("Usage: easy-preprocess-av-bag");
     }
 }

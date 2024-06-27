@@ -23,6 +23,7 @@ import org.w3c.dom.NodeList;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class PlaceHolders {
                     }
                     else if (0 == Files.size(bagDir.resolve(filePath))) {
                         String identifier = identifierNodes.item(0).getTextContent();
-                        identifierToDestMap.put(identifier, Path.of(filePath));
+                        identifierToDestMap.put(identifier, Paths.get(filePath));
                     }
                 }
                 fileElement.removeChild(sourceNode.item(0));

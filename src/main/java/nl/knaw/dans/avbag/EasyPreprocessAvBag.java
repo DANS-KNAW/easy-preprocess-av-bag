@@ -48,7 +48,7 @@ public class EasyPreprocessAvBag extends AbstractCommandLineApp<EasyPreprocessAv
                             description = "The directory containing the AV dataset.")
     private Path inputDir;
 
-    @CommandLine.Parameters(index = "2",
+    @CommandLine.Parameters(index = "1",
                             paramLabel = "OUTPUT_DIR",
                             description = "The directory where the converted dataset will be stored.")
     private Path outputDir;

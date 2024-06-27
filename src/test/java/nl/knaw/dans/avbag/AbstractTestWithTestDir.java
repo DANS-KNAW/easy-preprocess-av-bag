@@ -19,9 +19,10 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class AbstractTestWithTestDir {
-    protected final Path testDir = Path.of("target/test")
+    protected final Path testDir = Paths.get("target/test")
         .resolve(getClass().getSimpleName());
 
     @BeforeEach
