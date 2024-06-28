@@ -72,7 +72,7 @@ public class AVConverter {
             pathStream.filter(this::notSelfOrChild)
                 .forEach(this::convertOne);
         }
-        System.out.println(format("Conversion finished. Bags processed={6}, failed={7}, created={8}, doneBefore{9}. In directories: {3}={0}, {4}={1}, {5}={2}",
+        System.out.println(format("Conversion finished. Bags processed={6}, failed={7}, created={8}, doneBefore={9}. In directories: {3}={0}, {4}={1}, {5}={2}",
             getCount(inputDir),
             getCount(stagingDir),
             getCount(outputDir),
