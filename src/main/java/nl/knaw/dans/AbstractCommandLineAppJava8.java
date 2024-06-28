@@ -45,7 +45,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 
 @Slf4j
-public abstract class AbstractCommandLineApp<C extends Configuration> implements Callable<Integer> {
+public abstract class AbstractCommandLineAppJava8<C extends Configuration> implements Callable<Integer> {
     public static String CONFIG_FILE_KEY = "dans.default.config";
 
     /**

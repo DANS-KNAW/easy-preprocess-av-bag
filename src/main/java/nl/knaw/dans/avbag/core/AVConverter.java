@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,6 +50,10 @@ public class AVConverter {
     private final Path outputDir;
     private final Path stagingDir;
     private final PseudoFileSources pseudoFileSources;
+    private long processed = 0L;
+    private long createdBags = 0L;
+    private long failedBags = 0L;
+    private long doneBefore = 0L;
 
     public AVConverter(Path inputDir, Path outputDir, Path stagingDir, PseudoFileSources pseudoFileSources) {
         this.inputDir = inputDir;
@@ -67,10 +72,17 @@ public class AVConverter {
             pathStream.filter(this::notSelfOrChild)
                 .forEach(this::convertOne);
         }
-        System.out.println(format("Conversion finished: failed {0}, staged {1}, done {2}",
+        System.out.println(format("Conversion finished. Bags processed={6}, failed={7}, created={8}, doneBefore{9}. In directories: {3}={0}, {4}={1}, {5}={2}",
             getCount(inputDir),
             getCount(stagingDir),
-            getCount(outputDir)
+            getCount(outputDir),
+            inputDir,
+            stagingDir,
+            outputDir,
+            processed,
+            failedBags,
+            createdBags,
+            doneBefore
         ));
     }
 
@@ -87,6 +99,7 @@ public class AVConverter {
     private void convertOne(Path bag) {
         Path bagParent = bag.getParent().getFileName();
         if (outputDir.resolve(bagParent).toFile().exists()) {
+            doneBefore++;
             log.error("Skipped {}, it exists in {}", bagParent, outputDir);
             return;
         }
@@ -98,8 +111,12 @@ public class AVConverter {
             }
         }
         catch (Exception e) {
-            log.error(String.valueOf(bag.getParent().getFileName()) + " failed, it may or may not have (incomplete) bags in " + stagingDir, e
-            );
+            log.error(MessageFormat.format(
+                "{0} failed, it may or may not have (incomplete) bags in {1}",
+                bag.getParent().getFileName(),
+                stagingDir
+            ), e);
+            failedBags++;
         }
     }
 
@@ -131,7 +148,12 @@ public class AVConverter {
             springfieldFiles.addFiles(placeHolders);
             XmlUtil.writeFilesXml(revision3, filesXml);
             updateManifests(updateBagVersion(revision3, revision3));
+            createdBags += 3;
         }
+        else {
+            createdBags += 2;
+        }
+        processed++;
 
         moveStaged(revision1);
         moveStaged(revision2);
