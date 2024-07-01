@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -101,10 +102,10 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
             csv
         );
         createDirectories(testDir);
-        Files.write(csv, String.join("\n", Arrays.asList(
+        Files.write(csv, String.join("\n", new String[] {
             "easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir",
-            "easy-file:7296382,easy-dataset:112582,,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,")
-        ).getBytes(UTF_8));
+            "easy-file:7296382,easy-dataset:112582,,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,"
+        }).getBytes(UTF_8));
 
         TestUtils.captureStdout();
         ListAppender<ILoggingEvent> log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
@@ -125,10 +126,10 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
             Paths.get("src/test/resources/integration/springfield"),
             csv);
         createDirectories(testDir);
-        Files.write(csv, String.join("\n", Arrays.asList(
+        Files.write(csv, String.join("\n", new String[] {
             "easy_file_id,dataset_id,path_in_AV_dir,path_in_springfield_dir",
             ",easy-dataset:112582,eaa33307-4795-40a3-9051-e7d91a21838e/bag/data/ICA_DeJager_KroniekvaneenBazenbondje_Interview_Peter_Essenberg_1.pdf,"
-        )).getBytes(UTF_8));
+        }).getBytes(UTF_8));
 
         TestUtils.captureStdout();
         ListAppender<ILoggingEvent> log = TestUtils.captureLog(Level.INFO, "nl.knaw.dans.avbag");
@@ -157,11 +158,11 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
                 "easy-file:8322137", "easy-file:8322136", "easy-file:8322141", "easy-file:8322138"
             )));
         assertThat(sources.getSpringFieldFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").keySet())
-            .containsExactlyInAnyOrderElementsOf(new HashSet<>(Arrays.asList(
+            .containsExactlyInAnyOrderElementsOf(new HashSet<>(Collections.singletonList(
                 "easy-file:8322141"
             )));
         assertThat(sources.getSpringFieldFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").values())
-            .containsExactlyInAnyOrderElementsOf(new HashSet<>(Arrays.asList(
+            .containsExactlyInAnyOrderElementsOf(new HashSet<>(Collections.singletonList(
                 Paths.get(springfieldDir + "/domain/dans/user/NIOD/video/148/rawvideo/2/JKKV_2007_Eindpunt_Sobibor_SCHELVIS.mp4")
             )));
     }

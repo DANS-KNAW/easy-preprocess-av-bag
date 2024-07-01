@@ -61,12 +61,10 @@ public class NoneNoneFiles {
     }
 
     private static void deleteIfEmpty(Path path) throws IOException {
-        if (Files.isDirectory(path)) {
-            try (Stream<Path> list = Files.list(path)) {
-                if (!list.iterator().hasNext()) {
-                    Files.deleteIfExists(path);
-                    deleteIfEmpty(path.getParent());
-                }
+        try (Stream<Path> list = Files.list(path)) {
+            if (!list.iterator().hasNext()) {
+                Files.deleteIfExists(path);
+                deleteIfEmpty(path.getParent());
             }
         }
     }

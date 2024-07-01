@@ -54,7 +54,7 @@ public class EasyPreprocessAvBagTest extends AbstractTestWithTestDir {
         FileUtils.copyDirectory(integration.resolve("input-bags").toFile(), mutableInput);
 
         // TODO copy input-bags to testDir
-        String[] args = Arrays.asList("convert", mutableInput.toString(), out.toString()).toArray(new String[0]);
+        String[] args = new String[] {"convert", mutableInput.toString(), out.toString()};
 
         System.setProperty(CONFIG_FILE_KEY, config.toString());
         System.setProperty(EXAMPLE_CONFIG_FILE_KEY, config.toString());

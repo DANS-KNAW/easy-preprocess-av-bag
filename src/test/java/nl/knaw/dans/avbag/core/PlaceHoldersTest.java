@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
-    private final byte[] withPayload = String.join("\n", Arrays.asList(
+    private final byte[] withPayload = String.join("\n", new String[] {
         "<?xml version='1.0' encoding='UTF-8'?>",
         "<files xsi:schemaLocation='http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd'",
         "       xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'",
@@ -56,7 +55,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         "        <dct:source>http://legacy-storage.dans.knaw.nl/data/Getuigenverhalen/Caleidoscoop/GV_Demant_Ingekwartierd/GV_Demant_ingekwartierd_08.mp4</dct:source>",
         "    </file>",
         "</files>"
-    )).getBytes(UTF_8);
+    }).getBytes(UTF_8);
 
     @Test
     void constructor_reports_first_not_existing_file() throws Exception {
@@ -93,7 +92,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
 
         // XML content with missing <dct:identifier>
 
-        Files.write(filesXml, String.join("\n", Arrays.asList(
+        Files.write(filesXml, String.join("\n", new String[] {
             "<?xml version='1.0' encoding='UTF-8'?>",
             "<files xsi:schemaLocation='http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd'",
             "       xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'",
@@ -103,7 +102,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
             "        <dct:source>data/GV_CaleidoscoopFilm_ingekwartierd_08.doc</dct:source>",
             "    </file>",
             "</files>"
-        )).getBytes(UTF_8));
+        }).getBytes(UTF_8));
 
         captureStdout();
         ListAppender<ILoggingEvent> log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
@@ -114,11 +113,11 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
             .map(ILoggingEvent::getFormattedMessage)
             .collect(Collectors.toList());
         assertThat(lines).hasSize(1);
-        assertThat(lines.get(0)).isEqualTo(String.join("\n", Arrays.asList(
+        assertThat(lines.get(0)).isEqualTo(String.join("\n", new String[] {
             "No <dct:identifier> found: 7bf09491-54b4-436e-7f59-1027f54cbb0c <?xml version='1.0' encoding='UTF-8'?><file filepath='data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf' xmlns='http://easy.dans.knaw.nl/schemas/bag/metadata/files/'>",
             "        <dct:source xmlns:dct='http://purl.org/dc/terms/'>data/GV_CaleidoscoopFilm_ingekwartierd_08.doc</dct:source>",
             "    </file>"
-        )).replaceAll("'", "\""));
+        }).replaceAll("'", "\""));
     }
 
     @Test
@@ -128,7 +127,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         createDirectories(filesXml.getParent());
 
         // XML content with missing filepath attribute
-        Files.write(filesXml, String.join("\n", Arrays.asList(
+        Files.write(filesXml, String.join("\n", new String[] {
             "<?xml version='1.0' encoding='UTF-8'?>",
             "<files xsi:schemaLocation='http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd'",
             "       xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'",
@@ -139,7 +138,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
             "        <dct:source>data/GV_CaleidoscoopFilm_ingekwartierd_08.doc</dct:source>",
             "    </file>",
             "</files>"
-        )).getBytes(UTF_8));
+        }).getBytes(UTF_8));
 
         captureStdout();
         ListAppender<ILoggingEvent> log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
@@ -150,12 +149,12 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
             .map(ILoggingEvent::getFormattedMessage)
             .collect(Collectors.toList());
         assertThat(lines).hasSize(1);
-        assertThat(lines.get(0)).isEqualTo(String.join("\n", Arrays.asList(
+        assertThat(lines.get(0)).isEqualTo(String.join("\n", new String[] {
             "No filepath attribute found: 7bf09491-54b4-436e-7f59-1027f54cbb0c <?xml version='1.0' encoding='UTF-8'?><file xmlns='http://easy.dans.knaw.nl/schemas/bag/metadata/files/'>",
             "        <dct:identifier xmlns:dct='http://purl.org/dc/terms/'>easy-file:6227174</dct:identifier>",
             "        <dct:source xmlns:dct='http://purl.org/dc/terms/'>data/GV_CaleidoscoopFilm_ingekwartierd_08.doc</dct:source>",
             "    </file>"
-        )).replaceAll("'", "\""));
+        }).replaceAll("'", "\""));
     }
 
     @Test
@@ -223,14 +222,14 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         Path bagDir = testDir.resolve("7bf09491-54b4-436e-7f59-1027f54cbb0c/bag");
         Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
-        Files.write(filesXml, String.join("\n", Arrays.asList(
+        Files.write(filesXml, String.join("\n", new String[] {
             "<?xml version='1.0' encoding='UTF-8'?>",
             "<files xsi:schemaLocation='http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd'",
             "       xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'",
             "       xmlns='http://easy.dans.knaw.nl/schemas/bag/metadata/files/'",
             "       xmlns:dct='http://purl.org/dc/terms/'>",
             "</files>"
-        )).getBytes(UTF_8));
+        }).getBytes(UTF_8));
 
         createDirectories(bagDir.resolve("data/audio-video"));
         Files.createFile(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"));
