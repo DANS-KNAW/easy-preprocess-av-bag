@@ -3,6 +3,8 @@ pseudoFileSources:
   springfieldDir: data/springfield
   path: data/sources.csv
 
+stagingDir: data/staging
+
 #
 # See https://www.dropwizard.io/en/latest/manual/configuration.html#logging
 #
