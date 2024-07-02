@@ -17,18 +17,23 @@
 package nl.knaw.dans.avbag;
 
 import lombok.extern.slf4j.Slf4j;
+import nl.knaw.dans.AbstractCommandLineAppJava8;
+import nl.knaw.dans.VersionProvider;
+import nl.knaw.dans.avbag.command.ConvertCommand;
 import nl.knaw.dans.avbag.config.EasyPreprocessAvBagConfig;
-import nl.knaw.dans.lib.util.AbstractCommandLineApp;
-import nl.knaw.dans.lib.util.CliVersionProvider;
+import nl.knaw.dans.avbag.core.PseudoFileSources;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
+import java.io.IOException;
+
 @Command(name = "easy-preprocess-av-bag",
          mixinStandardHelpOptions = true,
-         versionProvider = CliVersionProvider.class,
+         versionProvider = VersionProvider.class,
          description = "Preprocesses a bag exported by easy-fedora-to-bag which contains AV materials")
 @Slf4j
-public class EasyPreprocessAvBag extends AbstractCommandLineApp<EasyPreprocessAvBagConfig> {
+public class EasyPreprocessAvBag extends AbstractCommandLineAppJava8<EasyPreprocessAvBagConfig> {
+
     public static void main(String[] args) throws Exception {
         new EasyPreprocessAvBag().run(args);
     }
@@ -39,7 +44,15 @@ public class EasyPreprocessAvBag extends AbstractCommandLineApp<EasyPreprocessAv
 
     @Override
     public void configureCommandLine(CommandLine commandLine, EasyPreprocessAvBagConfig config) {
+        try {
+            commandLine.addSubcommand(new ConvertCommand(
+                new PseudoFileSources(config.getPseudoFileSources()),
+                config.getStagingDir()
+            ));
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         log.debug("Configuring command line");
-        // TODO: add options and subcommands
     }
 }

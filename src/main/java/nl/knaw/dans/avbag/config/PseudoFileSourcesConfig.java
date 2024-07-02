@@ -15,13 +15,25 @@
  */
 package nl.knaw.dans.avbag.config;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
+import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class PseudoFileSourcesConfig {
+
+    @NotNull
     private Path darkarchiveDir;
+
+    @NotNull
     private Path springfieldDir;
+
+    @NotNull
     private Path path;
 }
