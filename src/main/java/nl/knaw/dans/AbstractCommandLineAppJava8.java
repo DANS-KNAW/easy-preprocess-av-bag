@@ -20,13 +20,13 @@ import ch.qos.logback.classic.Logger;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.dropwizard.Configuration;
 import io.dropwizard.configuration.ConfigurationException;
 import io.dropwizard.configuration.ConfigurationFactory;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.FileConfigurationSourceProvider;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.configuration.YamlConfigurationFactory;
-import io.dropwizard.Configuration;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.validation.Validators;
 import io.dropwizard.util.Generics;
@@ -54,6 +54,9 @@ public abstract class AbstractCommandLineAppJava8<C extends Configuration> imple
     public static String EXAMPLE_CONFIG_FILE_KEY = "dans.default.example.config";
 
     public void run(String[] args) throws IOException, ConfigurationException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
+        // Shut up java.util.logging to avoid com.fasterxml.jackson.module.blackbird.util.ReflectionHack warning about Java 9+ modules
+        java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.OFF);
+
         Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         root.setLevel(Level.OFF);
         File configFile = new File(System.getProperty(CONFIG_FILE_KEY));
