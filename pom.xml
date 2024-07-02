@@ -187,9 +187,26 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <!-- Overriding dans-nexus-maven-plugin configuration, to fix the http -> https URL. We cannot do that by upgrading to a newer version of the parent
+              POM, because that would require upgrading to DropWizard 3.x, which is compiled with Java 11. -->
             <plugin>
                 <groupId>nl.knaw.dans</groupId>
                 <artifactId>dans-nexus-maven-plugin</artifactId>
+                <version>${dans-nexus-maven-plugin.version}</version>
+                <configuration>
+                    <nexusUserName>${env.NEXUS_USER}</nexusUserName>
+                    <nexusPassword>${env.NEXUS_PASSWORD}</nexusPassword>
+                    <rpmRepositoryUrl>https://nexus.dans.knaw.nl/repository/rpm-releases</rpmRepositoryUrl>
+                    <snapshotRpmRepositoryUrl>https://nexus.dans.knaw.nl/repository/rpm-snapshots</snapshotRpmRepositoryUrl>
+                </configuration>
+                <executions>
+                    <execution>
+                        <!-- Use default phase: deploy -->
+                        <goals>
+                            <goal>deploy-rpm</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
