@@ -23,7 +23,7 @@ public class VersionProvider implements CommandLine.IVersionProvider {
     @Override
     public String[] getVersion() {
         // this returns null when executed locally with start.sh (mvn exec:java)
-        Package p = AbstractCommandLineAppJava8.class.getPackage();
+        Package p = this.getClass().getPackage();
         String implementationVersion = p.getImplementationVersion();
         return new String[] { implementationVersion };
     }
