@@ -44,8 +44,8 @@ public class EasyPreprocessAvBag extends AbstractCommandLineAppJava8<EasyPreproc
 
     @Override
     public void configureCommandLine(CommandLine commandLine, EasyPreprocessAvBagConfig config) {
-        log.info(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
-        log.info(System.getProperty(CONFIG_FILE_KEY));
+        log.debug(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
+        log.debug(System.getProperty(CONFIG_FILE_KEY));
         commandLine.addSubcommand(new ConvertCommand(
             config.getPseudoFileSources(),
             config.getStagingDir()
