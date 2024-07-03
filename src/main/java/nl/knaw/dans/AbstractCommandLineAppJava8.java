@@ -39,21 +39,18 @@ import picocli.CommandLine;
 import javax.validation.Validator;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
 
+import static nl.knaw.dans.lib.util.AbstractCommandLineApp.CONFIG_FILE_KEY;
+import static nl.knaw.dans.lib.util.AbstractCommandLineApp.EXAMPLE_CONFIG_FILE_KEY;
+
 @Slf4j
 public abstract class AbstractCommandLineAppJava8<C extends Configuration> implements Callable<Integer> {
-    public static String CONFIG_FILE_KEY = "dans.default.config";
+    // copy-pasted because the library version imports io.dropwizard.core.Configuration
 
-    /**
-     * Path from which an example configuration file can be loaded, to be instantiated with the default configuration, if no configuration file is found.
-     */
-    public static String EXAMPLE_CONFIG_FILE_KEY = "dans.default.example.config";
-
-    public void run(String[] args) throws IOException, ConfigurationException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
+    public void run(String[] args) throws IOException, ConfigurationException {
         // Shut up java.util.logging to avoid com.fasterxml.jackson.module.blackbird.util.ReflectionHack warning about Java 9+ modules
         java.util.logging.Logger.getLogger("").setLevel(java.util.logging.Level.OFF);
 
@@ -91,7 +88,7 @@ public abstract class AbstractCommandLineAppJava8<C extends Configuration> imple
 
     public abstract void configureCommandLine(CommandLine commandLine, C config);
 
-    public Integer call() throws Exception {
+    public Integer call() {
         return 0;
     }
 

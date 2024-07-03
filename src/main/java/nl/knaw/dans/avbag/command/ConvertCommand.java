@@ -26,9 +26,6 @@ import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
-import static nl.knaw.dans.AbstractCommandLineAppJava8.CONFIG_FILE_KEY;
-import static nl.knaw.dans.lib.util.AbstractCommandLineApp.EXAMPLE_CONFIG_FILE_KEY;
-
 @Slf4j
 @Command(
     name = "convert",
@@ -56,8 +53,6 @@ public class ConvertCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        log.info(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
-        log.info(System.getProperty(CONFIG_FILE_KEY));
         try {
             new AVConverter(inputDir, outputDir, stagingDir, new PseudoFileSources(config))
                 .convertAll();

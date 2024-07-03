@@ -24,6 +24,9 @@ import nl.knaw.dans.avbag.config.EasyPreprocessAvBagConfig;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
+import static nl.knaw.dans.lib.util.AbstractCommandLineApp.CONFIG_FILE_KEY;
+import static nl.knaw.dans.lib.util.AbstractCommandLineApp.EXAMPLE_CONFIG_FILE_KEY;
+
 @Command(name = "easy-preprocess-av-bag",
          mixinStandardHelpOptions = true,
          versionProvider = VersionProvider.class,
@@ -41,6 +44,8 @@ public class EasyPreprocessAvBag extends AbstractCommandLineAppJava8<EasyPreproc
 
     @Override
     public void configureCommandLine(CommandLine commandLine, EasyPreprocessAvBagConfig config) {
+        log.info(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
+        log.info(System.getProperty(CONFIG_FILE_KEY));
         commandLine.addSubcommand(new ConvertCommand(
             config.getPseudoFileSources(),
             config.getStagingDir()
