@@ -21,11 +21,8 @@ import nl.knaw.dans.AbstractCommandLineAppJava8;
 import nl.knaw.dans.VersionProvider;
 import nl.knaw.dans.avbag.command.ConvertCommand;
 import nl.knaw.dans.avbag.config.EasyPreprocessAvBagConfig;
-import nl.knaw.dans.avbag.core.PseudoFileSources;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-
-import java.io.IOException;
 
 @Command(name = "easy-preprocess-av-bag",
          mixinStandardHelpOptions = true,
@@ -44,15 +41,10 @@ public class EasyPreprocessAvBag extends AbstractCommandLineAppJava8<EasyPreproc
 
     @Override
     public void configureCommandLine(CommandLine commandLine, EasyPreprocessAvBagConfig config) {
-        try {
-            commandLine.addSubcommand(new ConvertCommand(
-                new PseudoFileSources(config.getPseudoFileSources()),
-                config.getStagingDir()
-            ));
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        commandLine.addSubcommand(new ConvertCommand(
+            config.getPseudoFileSources(),
+            config.getStagingDir()
+        ));
         log.debug("Configuring command line");
     }
 }

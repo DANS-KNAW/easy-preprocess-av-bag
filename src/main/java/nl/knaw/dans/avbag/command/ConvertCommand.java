@@ -16,6 +16,7 @@
 package nl.knaw.dans.avbag.command;
 
 import lombok.extern.slf4j.Slf4j;
+import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
 import nl.knaw.dans.avbag.core.AVConverter;
 import nl.knaw.dans.avbag.core.PseudoFileSources;
 import picocli.CommandLine;
@@ -35,8 +36,8 @@ import static nl.knaw.dans.lib.util.AbstractCommandLineApp.EXAMPLE_CONFIG_FILE_K
     description = "Convert the bags.")
 public class ConvertCommand implements Callable<Integer> {
 
-    private final PseudoFileSources pseudoFileSources;
     private final Path stagingDir;
+    private final PseudoFileSourcesConfig config;
 
     @CommandLine.Parameters(index = "0",
                             paramLabel = "INPUT_DIR",
@@ -48,17 +49,17 @@ public class ConvertCommand implements Callable<Integer> {
                             description = "The directory where the converted dataset will be stored.")
     private Path outputDir;
 
-    public ConvertCommand(PseudoFileSources pseudoFileSources, @NotNull Path stagingDir) {
-        this.pseudoFileSources = pseudoFileSources;
+    public ConvertCommand(PseudoFileSourcesConfig config, @NotNull Path stagingDir) {
+        this.config = config;
         this.stagingDir = stagingDir;
     }
 
     @Override
     public Integer call() {
-        log.warn(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
-        log.warn(System.getProperty(CONFIG_FILE_KEY));
+        log.info(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
+        log.info(System.getProperty(CONFIG_FILE_KEY));
         try {
-            new AVConverter(inputDir, outputDir, stagingDir, pseudoFileSources)
+            new AVConverter(inputDir, outputDir, stagingDir, new PseudoFileSources(config))
                 .convertAll();
         }
         catch (Exception e) {
