@@ -18,7 +18,7 @@ package nl.knaw.dans.avbag;
 
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.AbstractCommandLineAppJava8;
-import nl.knaw.dans.VersionProvider;
+import nl.knaw.dans.lib.util.PicocliVersionProvider;
 import nl.knaw.dans.avbag.command.ConvertCommand;
 import nl.knaw.dans.avbag.config.EasyPreprocessAvBagConfig;
 import picocli.CommandLine;
@@ -29,7 +29,7 @@ import static nl.knaw.dans.lib.util.AbstractCommandLineApp.EXAMPLE_CONFIG_FILE_K
 
 @Command(name = "easy-preprocess-av-bag",
          mixinStandardHelpOptions = true,
-         versionProvider = VersionProvider.class,
+         versionProvider = PicocliVersionProvider.class,
          description = "Preprocesses a bag exported by easy-fedora-to-bag which contains AV materials")
 @Slf4j
 public class EasyPreprocessAvBag extends AbstractCommandLineAppJava8<EasyPreprocessAvBagConfig> {
@@ -44,12 +44,12 @@ public class EasyPreprocessAvBag extends AbstractCommandLineAppJava8<EasyPreproc
 
     @Override
     public void configureCommandLine(CommandLine commandLine, EasyPreprocessAvBagConfig config) {
+        log.debug("Configuring command line");
         log.debug(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
         log.debug(System.getProperty(CONFIG_FILE_KEY));
         commandLine.addSubcommand(new ConvertCommand(
             config.getPseudoFileSources(),
             config.getStagingDir()
         ));
-        log.debug("Configuring command line");
     }
 }
