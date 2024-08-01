@@ -75,7 +75,6 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     @BeforeEach
     public void setup() throws Exception {
         super.setUp();
-
         createDirectories(mutableInput);
         createDirectories(convertedBags);
         createDirectories(stagedBags);
