@@ -54,6 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IntegrationTest extends AbstractTestWithTestDir {
+
     private final Path integration = Paths.get("src/test/resources/integration");
     private final Path inputBags = integration.resolve("input-bags");
     private final Path mutableInput = testDir.resolve("input-bags");
