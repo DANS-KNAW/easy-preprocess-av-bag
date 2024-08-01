@@ -40,7 +40,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
     @Test
-    public void should_abort_when_dirs_do_not_exist() {
+    public void should_abort_when_configured_dirs_do_not_exist() {
         PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
             testDir.resolve("darkArchiveDir"),
             testDir.resolve("springfieldDir"),
@@ -82,15 +82,46 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     @Test
     public void should_abort_when_files_in_csv_do_not_exist() throws IOException {
         PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
-            createDirectories(testDir.resolve("darkArchiveDir")),
-            createDirectories(testDir.resolve("springfieldDir")),
+            createDirectories(Paths.get("darkarchive")),
+            createDirectories(Paths.get("springfield")),
             Paths.get("src/test/resources/integration/sources.csv")
         );
         assertThatThrownBy(() ->
             new PseudoFileSources(pseudoFileSources)
         ).isInstanceOf(IOException.class)
-            .hasMessageStartingWith("Not existing files: [target/test/PseudoFileSourcesTest/springfieldDir/domain/dans/user/nini/video/12/rawvideo/2/NH173.mp4")
-            .hasMessageEndingWith("darkArchiveDir/993ec2ee-b716-45c6-b9d1-7190f98a200a/bag/data/JKKV_JBohnen_IV-verklaring_schenkingsovereenkomst_NIOD.pdf]");
+            .hasMessageStartingWith("Not existing files: [springfield/")
+            .hasMessageContaining("] [darkarchive/");
+    }
+
+    @Test
+    public void should_abort_when_springfield_files_in_csv_do_not_exist() throws IOException {
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
+            createDirectories(Paths.get("src/test/resources/integration/darkarchive")),
+            createDirectories(Paths.get("springfield")),
+            Paths.get("src/test/resources/integration/sources.csv")
+        );
+        assertThatThrownBy(() ->
+            new PseudoFileSources(pseudoFileSources)
+        ).isInstanceOf(IOException.class)
+            .hasMessageStartingWith("Not existing files: [springfield/")
+            .hasMessageEndingWith("] []")
+            .hasMessageNotContaining("darkarchive/");
+        // the second list is empty
+    }
+
+    @Test
+    public void should_abort_when_darkarchive_files_in_csv_do_not_exist() throws IOException {
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
+            createDirectories(Paths.get("darkarchive")),
+            createDirectories(Paths.get("src/test/resources/integration/springfield")),
+            Paths.get("src/test/resources/integration/sources.csv")
+        );
+        assertThatThrownBy(() ->
+            new PseudoFileSources(pseudoFileSources)
+        ).isInstanceOf(IOException.class)
+            .hasMessageStartingWith("Not existing files: [] [darkarchive")
+            .hasMessageNotContaining("springfield/");
+        // the first list is empty
     }
 
     @Test
@@ -143,6 +174,43 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
     }
 
     @Test
+    public void should_not_read_csv_without_header() throws IOException {
+        createDirectories(testDir);
+        Path csv = testDir.resolve("sources.csv");
+        Files.write(csv, String.join("\n", new String[] {
+            "e,d,p,"
+        }).getBytes(UTF_8));
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
+            Paths.get("src/test/resources/integration/darkarchive"),
+            Paths.get("src/test/resources/integration/springfield"),
+            Paths.get(csv.toString())
+        );
+
+        assertThatThrownBy(() -> new PseudoFileSources(pseudoFileSources))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageStartingWith("A header name is missing in [e, d, p, ]");
+    }
+
+    @Test
+    public void should_not_read_csv_with_wrong_header() throws IOException {
+        createDirectories(testDir);
+        Path csv = testDir.resolve("sources.csv");
+        Files.write(csv, String.join("\n", new String[] {
+            "a,b,c,d",
+            "p,q,r,s"
+        }).getBytes(UTF_8));
+        PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
+            Paths.get("src/test/resources/integration/darkarchive"),
+            Paths.get("src/test/resources/integration/springfield"),
+            Paths.get(csv.toString())
+        );
+
+        assertThatThrownBy(() -> new PseudoFileSources(pseudoFileSources))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageStartingWith("path_in_AV_dir not found in actual CSV headers: [a, b, c, d]");
+    }
+
+    @Test
     public void should_not_throw() throws IOException {
         String springfieldDir = "src/test/resources/integration/springfield";
         PseudoFileSourcesConfig pseudoFileSources = new PseudoFileSourcesConfig(
@@ -153,17 +221,25 @@ public class PseudoFileSourcesTest extends AbstractTestWithTestDir {
 
         PseudoFileSources sources = new PseudoFileSources(pseudoFileSources);
 
-        assertThat(sources.getDarkArchiveFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").keySet())
+        String uuid = "993ec2ee-b716-45c6-b9d1-7190f98a200a";
+        assertThat(sources.getDarkArchiveFiles(uuid).keySet())
             .containsExactlyInAnyOrderElementsOf(new HashSet<>(Arrays.asList(
                 "easy-file:8322137", "easy-file:8322136", "easy-file:8322141", "easy-file:8322138"
             )));
-        assertThat(sources.getSpringFieldFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").keySet())
+        assertThat(sources.getSpringFieldFiles(uuid).keySet())
             .containsExactlyInAnyOrderElementsOf(new HashSet<>(Collections.singletonList(
                 "easy-file:8322141"
             )));
-        assertThat(sources.getSpringFieldFiles("993ec2ee-b716-45c6-b9d1-7190f98a200a").values())
+        assertThat(sources.getSpringFieldFiles(uuid).values())
             .containsExactlyInAnyOrderElementsOf(new HashSet<>(Collections.singletonList(
                 Paths.get(springfieldDir + "/domain/dans/user/NIOD/video/148/rawvideo/2/JKKV_2007_Eindpunt_Sobibor_SCHELVIS.mp4")
             )));
+    }
+
+    @Test
+    public void no_arg_config_constructor() {
+        assertThatThrownBy(() -> new PseudoFileSources(new PseudoFileSourcesConfig()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("PseudoFileSourcesConfig is incomplete");
     }
 }

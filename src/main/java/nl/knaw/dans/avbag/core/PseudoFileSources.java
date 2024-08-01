@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.text.MessageFormat.format;
@@ -101,9 +102,9 @@ public class PseudoFileSources {
         try (CSVParser csvParser = CSVParser.parse(filePath, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withHeader())) {
             int count = 0;
             for (CSVRecord csvRecord : csvParser) {
-                String pathInAVdDir = csvRecord.get("path_in_AV_dir");
-                String pathInSpringfieldDir = csvRecord.get("path_in_springfield_dir");
-                String fileId = csvRecord.get("easy_file_id");
+                String pathInAVdDir = getField(csvRecord,"path_in_AV_dir");
+                String pathInSpringfieldDir = getField(csvRecord,"path_in_springfield_dir");
+                String fileId = getField(csvRecord, "easy_file_id");
                 if (isNotEmpty(pathInAVdDir) && isNotEmpty(fileId)) {
                     String bagParent = Paths.get(pathInAVdDir).getName(0).toString();
                     bagParentToFileToAV.computeIfAbsent(
@@ -123,6 +124,16 @@ public class PseudoFileSources {
             if (count > 0) {
                 throw new IllegalStateException(format("{0} records have missing values. See warnings.", count));
             }
+        }
+    }
+
+    private static String getField(CSVRecord csvRecord, String header) {
+        if (csvRecord.isMapped(header)) {
+            return csvRecord.get(header);
+        } else {
+            // replacing message: Mapping for [header] not found, expected one of [actualHeaders]
+            Set<String> actualHeaders = csvRecord.getParser().getHeaderMap().keySet();
+            throw new IllegalArgumentException(format("{0} not found in actual CSV headers: {1}", header, actualHeaders));
         }
     }
 }
