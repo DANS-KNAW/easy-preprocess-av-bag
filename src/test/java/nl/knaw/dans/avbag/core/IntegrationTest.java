@@ -54,6 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IntegrationTest extends AbstractTestWithTestDir {
+
     private final Path integration = Paths.get("src/test/resources/integration");
     private final Path inputBags = integration.resolve("input-bags");
     private final Path mutableInput = testDir.resolve("input-bags");
@@ -149,9 +150,10 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void is_happy() throws Exception {
+    public void should_create_three_bags_per_input_bag() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
 
+        ByteArrayOutputStream stdout = captureStdout();
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
         assertThat(mutableInput).isEmptyDirectory();
@@ -163,6 +165,29 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         collectManifests(manifests, convertedBags);
         assertThat(new HashSet<>(manifests))
             .containsExactlyInAnyOrderElementsOf(manifests);
+
+        assertThat(stdout.toString()).contains("processed=5, failed=0, created=15, doneBefore=0");
+    }
+
+    @Test
+    public void should_not_create_springfield_bags() throws Exception {
+        FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
+
+        List<String> lines = readAllLines(integration.resolve("sources.csv")).stream()
+            .map(line -> line.replaceAll("domain/.*", ""))
+            .collect(Collectors.toList());
+        Path csv = testDir.resolve("sources.csv");
+        Files.write(csv, String.join("\n", lines).getBytes(UTF_8));
+
+        PseudoFileSources pseudoFileSources = new PseudoFileSources(new PseudoFileSourcesConfig(
+            integration.resolve("darkarchive"),
+            integration.resolve("springfield"),
+            csv
+        ));
+
+        new AVConverter(mutableInput, convertedBags, stagedBags, pseudoFileSources).convertAll();
+
+        assertThat(stdout.toString()).contains("processed=5, failed=0, created=10, doneBefore=0");
     }
 
     @Test
