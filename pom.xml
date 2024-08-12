@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>easy-preprocess-av-bag</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4-SNAPSHOT</version>
 
     <name>Easy Preprocess Av Bag</name>
     <url>https://github.com/DANS-KNAW/easy-preprocess-av-bag</url>
@@ -41,7 +41,7 @@
 
     <scm>
         <developerConnection>scm:git:ssh://github.com/DANS-KNAW/easy-preprocess-av-bag</developerConnection>
-        <tag>v1.0.3</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <dependencies>
