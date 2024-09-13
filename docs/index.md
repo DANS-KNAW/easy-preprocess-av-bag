@@ -23,17 +23,15 @@ by [easy-convert-bag-to-deposit] and ingested into a Data Station.
 ### Processing
 
 The input is a directory containing bags exported from EASY by `easy-fedora-to-bag`. The output is a directory containing the preprocessed bags. Each input bag
-results in two or three output bags, corresponding to one to three versions of the dataset to be created in the Data Station:
+results in two output bags, corresponding to two versions of the dataset to be created in the Data Station:
 
-1. The original dataset, completed with files that were included as pseudo-files in EASY. A pseudo-files was a reference to a file stored in the dark archive.
-2. A new version of the dataset, with the files that were set to accessibility/visibility "NONE" removed.
-3. A third version of the dataset, with the streaming copies of the audio and video files added.
+1. The original bag, with the files that were set to accessibility/visibility "NONE" *and* the pseudo files pointing to originals in the dark archive removed.
+2. A second version of the dataset, with the streaming copies of the audio and video files added.
 
-Where to find the content of the pseudo-files and streaming files is specified in the configuration file:
+Where to find the streaming copies is specified in the configuration file:
 
 ```yaml
 pseudoFileSources:
-  darkarchiveDir: # ...location of directory containing dark archive files
   springfieldDir: # ...location of directory containing files from Springfield (streaming copies)
   path: # ...location of a CSV file detailing where to find the files  
 
@@ -42,11 +40,10 @@ pseudoFileSources:
 
 The CSV file should have the following format:
 
-| easy-file-id    | easy-dataset-id    | path-in-darcharchive-dir | path-in-springfield-dir | 
-|-----------------|--------------------|--------------------------|-------------------------|
-| easy-file:12345 | easy-dataset:67890 | path/to/file1            | path/to/file2           |
-| easy-file:23456 | easy-dataset:67890 | path/to/file3            | path/to/file4           |
-
+| easy-dataset-id    | path-in-springfield-dir | 
+|--------------------|-------------------------|
+| easy-dataset:67890 | path/to/file2           |
+| easy-dataset:67890 | path/to/file4           |
 
 INSTALLATION AND CONFIGURATION
 ------------------------------
@@ -57,10 +54,6 @@ For installation on systems that do no support RPM and/or systemd:
 
 1. Build the tarball (see next section).
 2. Extract it to some location on your system, for example `/opt/dans.knaw.nl/easy-preprocess-av-bag`.
-3. Start the service with the following command
-   ```
-   /opt/dans.knaw.nl/easy-preprocess-av-bag/bin/easy-preprocess-av-bag server /opt/dans.knaw.nl/easy-preprocess-av-bag/cfg/config.yml 
-   ```
 
 BUILDING FROM SOURCE
 --------------------
