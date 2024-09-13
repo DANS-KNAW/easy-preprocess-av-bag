@@ -19,7 +19,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
-import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
+import nl.knaw.dans.avbag.config.StreamingCopiesConfig;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -250,8 +250,8 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         );
     }
 
-    private static PseudoFileSourcesConfig getPseudoFileSourcesConfig() {
-        return new PseudoFileSourcesConfig(
+    private static StreamingCopiesConfig getPseudoFileSourcesConfig() {
+        return new StreamingCopiesConfig(
             Paths.get("src/test/resources/integration/darkarchive"),
             Paths.get("src/test/resources/integration/springfield"),
             Paths.get("src/test/resources/integration/sources.csv")

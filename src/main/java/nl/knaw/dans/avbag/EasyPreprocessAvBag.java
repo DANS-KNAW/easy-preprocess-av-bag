@@ -48,8 +48,8 @@ public class EasyPreprocessAvBag extends AbstractCommandLineAppJava8<EasyPreproc
         log.debug(System.getProperty(EXAMPLE_CONFIG_FILE_KEY));
         log.debug(System.getProperty(CONFIG_FILE_KEY));
         commandLine.addSubcommand(new ConvertCommand(
-            config.getPseudoFileSources(),
-            config.getStagingDir()
+            config.getStreamingCopies(),
+            config.getSourcesCsv()
         ));
     }
 }

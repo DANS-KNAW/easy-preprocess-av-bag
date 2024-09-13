@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
 
@@ -32,8 +33,9 @@ import java.nio.file.Path;
 public class EasyPreprocessAvBagConfig extends Configuration {
 
     @NotNull
-    private PseudoFileSourcesConfig pseudoFileSources;
+    @Valid
+    private StreamingCopiesConfig streamingCopies;
 
     @NotNull
-    private Path stagingDir;
+    private Path sourcesCsv;
 }

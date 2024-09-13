@@ -15,14 +15,14 @@
  */
 package nl.knaw.dans.avbag.command;
 
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
+import nl.knaw.dans.avbag.config.StreamingCopiesConfig;
 import nl.knaw.dans.avbag.core.AVConverter;
-import nl.knaw.dans.avbag.core.PseudoFileSources;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
-import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
@@ -31,25 +31,22 @@ import java.util.concurrent.Callable;
     name = "convert",
     mixinStandardHelpOptions = true,
     description = "Convert the bags.")
+@RequiredArgsConstructor
 public class ConvertCommand implements Callable<Integer> {
-
+    @NonNull
+    private final StreamingCopiesConfig config;
+    @NonNull
     private final Path stagingDir;
-    private final PseudoFileSourcesConfig config;
 
-    @CommandLine.Parameters(index = "0",
-                            paramLabel = "INPUT_DIR",
-                            description = "The directory containing the AV dataset.")
+    @Parameters(index = "0",
+                paramLabel = "INPUT_DIR",
+                description = "The directory containing the exported AV bags.")
     private Path inputDir;
 
-    @CommandLine.Parameters(index = "1",
-                            paramLabel = "OUTPUT_DIR",
-                            description = "The directory where the converted dataset will be stored.")
+    @Parameters(index = "1",
+                paramLabel = "OUTPUT_DIR",
+                description = "The directory where the converted AV bags will be stored.")
     private Path outputDir;
-
-    public ConvertCommand(PseudoFileSourcesConfig config, @NotNull Path stagingDir) {
-        this.config = config;
-        this.stagingDir = stagingDir;
-    }
 
     @Override
     public Integer call() {

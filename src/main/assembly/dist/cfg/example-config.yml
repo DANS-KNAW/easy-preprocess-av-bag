@@ -1,7 +1,6 @@
-pseudoFileSources:
-  darkarchiveDir: /data/av-migration/darkarchive
-  springfieldDir: /data/av-migration/springfield
-  path: /data/av-migration/sources.csv
+streamingCopies:
+  baseDir: /data/av-migration/springfield
+  sourceCsv: /data/av-migration/sources.csv
 
 stagingDir: ${HOME}/staging
 

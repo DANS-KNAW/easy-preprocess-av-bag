@@ -20,7 +20,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.core.read.ListAppender;
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
-import nl.knaw.dans.avbag.config.PseudoFileSourcesConfig;
+import nl.knaw.dans.avbag.config.StreamingCopiesConfig;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -179,7 +179,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         Path csv = testDir.resolve("sources.csv");
         Files.write(csv, String.join("\n", lines).getBytes(UTF_8));
 
-        PseudoFileSources pseudoFileSources = new PseudoFileSources(new PseudoFileSourcesConfig(
+        PseudoFileSources pseudoFileSources = new PseudoFileSources(new StreamingCopiesConfig(
             integration.resolve("darkarchive"),
             integration.resolve("springfield"),
             csv
@@ -320,7 +320,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     private PseudoFileSources getPseudoFileSources() throws IOException {
-        return new PseudoFileSources(new PseudoFileSourcesConfig(
+        return new PseudoFileSources(new StreamingCopiesConfig(
             integration.resolve("darkarchive"),
             integration.resolve("springfield"),
             integration.resolve("sources.csv")

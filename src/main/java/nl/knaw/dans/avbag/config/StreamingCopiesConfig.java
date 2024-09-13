@@ -18,7 +18,6 @@ package nl.knaw.dans.avbag.config;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
@@ -26,14 +25,11 @@ import java.nio.file.Path;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PseudoFileSourcesConfig {
+public class StreamingCopiesConfig {
 
     @NotNull
-    private Path darkarchiveDir;
+    private Path baseDir;
 
     @NotNull
-    private Path springfieldDir;
-
-    @NotNull
-    private Path path;
+    private Path sourcesCsv;
 }
