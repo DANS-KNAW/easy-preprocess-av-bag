@@ -124,6 +124,7 @@ public class AVConverter {
         throws IOException, TransformerException, MaliciousPathException, UnparsableVersionException, UnsupportedAlgorithmException,
         InvalidBagitFileFormatException, NoSuchAlgorithmException, ParserConfigurationException, SAXException {
         String inputBagParentName = inputBagDir.getParent().getFileName().toString();
+        SpringfieldFiles springfieldFiles = new SpringfieldFiles(filesXml, pseudoFileSources.getSpringFieldFiles(inputBagParentName));
         Path revision1 = stagingDir.resolve(inputBagParentName).resolve(inputBagDir.getFileName());
         Path revision2 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
 
@@ -138,9 +139,8 @@ public class AVConverter {
         log.info("Creating revision 2: {} ### {}", inputBagParentName, revision2.getParent().getFileName());
         copyDirectory(revision1.toFile(), revision2.toFile());
 
-        SpringfieldFiles springfieldFiles = new SpringfieldFiles(revision2, filesXml, pseudoFileSources.getSpringFieldFiles(inputBagParentName));
         if (springfieldFiles.hasFilesToAdd()) {
-            springfieldFiles.addFiles(placeHolders);
+            springfieldFiles.addFiles(placeHolders, revision2);
             XmlUtil.writeFilesXml(revision2, filesXml);
             updateManifests(updateBagVersion(revision2, revision1));
             createdBags++;

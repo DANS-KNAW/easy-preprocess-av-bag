@@ -36,13 +36,11 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
 @Slf4j
 public class SpringfieldFiles {
 
-    private final Path bagDir;
     private final Document filesXml;
     private final Map<String, Path> springfieldFiles;
     private final Map<String, Element> idToElement = new HashMap<>();
 
-    public SpringfieldFiles(Path bagDir, Document filesXml, Map<String, Path> springfieldFiles) {
-        this.bagDir = bagDir;
+    public SpringfieldFiles(Document filesXml, Map<String, Path> springfieldFiles) {
         this.filesXml = filesXml;
         this.springfieldFiles = springfieldFiles;
         NodeList idElems = filesXml.getElementsByTagName("dct:identifier");
@@ -62,11 +60,11 @@ public class SpringfieldFiles {
         return !idToElement.isEmpty();
     }
 
-    public void addFiles(PlaceHolders placeHolders) throws IOException {
+    public void addFiles(PlaceHolders placeHolders, Path bagDir) throws IOException {
         List<Node> newFileList = new ArrayList<>();
         for (Map.Entry<String, Element> entry : idToElement.entrySet()) {
             String fileId = entry.getKey();
-            String added = addPayloadFile(springfieldFiles.get(fileId), placeHolders.getDestPath(fileId));
+            String added = addPayloadFile(springfieldFiles.get(fileId), placeHolders.getDestPath(fileId), bagDir);
             Element newFileElement = newFileElement(added, entry.getValue());
             newFileList.add(newFileElement);
         }
@@ -77,7 +75,7 @@ public class SpringfieldFiles {
         }
     }
 
-    private String addPayloadFile(Path source, String placeHolder) throws IOException {
+    private String addPayloadFile(Path source, String placeHolder, Path bagDir) throws IOException {
         String sourceExtension = getExtension(source.toString());
         String placeHolderExtension = getExtension(placeHolder);
         String newExtension = sourceExtension.equals(placeHolderExtension)
