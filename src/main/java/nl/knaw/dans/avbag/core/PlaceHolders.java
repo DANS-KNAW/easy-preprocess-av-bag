@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -73,6 +75,10 @@ public class PlaceHolders {
     public String getDestPath(String identifier) {
         Path path = identifierToDestMap.get(identifier);
         return (path != null) ? path.toString() : null;
+    }
+
+    public List<Path> getPaths() {
+        return new ArrayList<>(identifierToDestMap.values());
     }
 
     private void find() throws IOException {

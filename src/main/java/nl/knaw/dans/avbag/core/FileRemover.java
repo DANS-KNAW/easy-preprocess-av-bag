@@ -26,25 +26,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
-public class NoneNoneFiles {
+public class FileRemover {
 
     private final Path bagDir;
 
-    public NoneNoneFiles(Path bagDir) {
+    public FileRemover(Path bagDir) {
         this.bagDir = bagDir;
     }
 
-    public List<Path> removeNoneNone(Document mutatedFilesXml) throws IOException {
+    public List<Path> removeFiles(Document mutatedFilesXml, Predicate<Element> removeWhen) throws IOException {
 
         List<Path> filesWithNoneNone = new ArrayList<>();
         NodeList fileList = mutatedFilesXml.getElementsByTagName("file");
         for (int i = 0; i < fileList.getLength(); i++) {
             Element fileElement = (Element) fileList.item(i);
-            if (isNone(fileElement, "accessibleToRights") && isNone(fileElement, "visibleToRights")) {
+//            if (isNone(fileElement, "accessibleToRights") && isNone(fileElement, "visibleToRights")) {
+            if(removeWhen.test(fileElement)) {
                 String filepath = fileElement.getAttribute("filepath");
                 filesWithNoneNone.add(Paths.get(filepath));
                 fileElement.getParentNode().removeChild(fileElement);
@@ -69,10 +71,5 @@ public class NoneNoneFiles {
         }
     }
 
-    private static boolean isNone(Node fileElement, String tag) {
-        NodeList elements = ((Element) fileElement).getElementsByTagName(tag);
-        if (elements.getLength() == 0)
-            return true;
-        return "NONE".equals(elements.item(0).getTextContent());
-    }
+
 }

@@ -42,6 +42,11 @@ import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 public class BagInfoManager {
 
+    public static Bag getBag(Path bagDir)
+        throws IOException, UnparsableVersionException, MaliciousPathException, UnsupportedAlgorithmException, InvalidBagitFileFormatException, ParserConfigurationException, SAXException {
+        return new BagReader().read(bagDir);
+    }
+
     public static Bag updateBagVersion(Path newBagDir, Path previousBagDir)
         throws IOException, UnparsableVersionException, MaliciousPathException, UnsupportedAlgorithmException, InvalidBagitFileFormatException, ParserConfigurationException, SAXException {
         String now = ZonedDateTime

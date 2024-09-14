@@ -127,7 +127,7 @@ public abstract class ManifestManager {
 
                 // statistics: is it worth to calculate only the changed files?
                 String depositDir = bag.getRootDir().getParent().getFileName().toString();
-                List<String> versionOf = bag.getMetadata().get("Is-version-of");
+                List<String> versionOf = bag.getMetadata().get("Is-Version-Of");
                 if (!isEmpty(versionOf)) {
                     depositDir = versionOf.get(0).replace("urn:uuid:", "");
                 }

@@ -33,11 +33,11 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.text.MessageFormat.format;
+import static nl.knaw.dans.avbag.core.BagInfoManager.getBag;
 import static nl.knaw.dans.avbag.core.BagInfoManager.updateBagVersion;
 import static nl.knaw.dans.avbag.core.ManifestManager.removePayloadsFromManifest;
 import static nl.knaw.dans.avbag.core.ManifestManager.updateManifests;
@@ -126,48 +126,36 @@ public class AVConverter {
         String inputBagParentName = inputBagDir.getParent().getFileName().toString();
         Path revision1 = stagingDir.resolve(inputBagParentName).resolve(inputBagDir.getFileName());
         Path revision2 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
-        Path revision3 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
 
         log.info("Creating revision 1: {} ### {}", inputBagParentName, revision1.getParent().getFileName());
         copyDirectory(inputBagDir.toFile(), revision1.toFile());
-        for (Map.Entry<String, Path> entry : pseudoFileSources.getDarkArchiveFiles(inputBagParentName).entrySet()) {
-            replacePayloadFile(revision1, entry.getValue(), placeHolders.getDestPath(entry.getKey()));
-        }
+        List<Path> removedFiles = new FileRemover(revision1).removeFiles(filesXml, new FilesToBeRemovedFilter(placeHolders.getPaths()));
+        XmlUtil.writeFilesXml(revision1, filesXml);
+        removedFiles.addAll(placeHolders.getPaths()); // So that are also removed from the manifest
+        removePayloadsFromManifest(removedFiles, getBag(revision1));
         updateManifests(new BagReader().read(revision1));
-
+        createdBags++;
         log.info("Creating revision 2: {} ### {}", inputBagParentName, revision2.getParent().getFileName());
         copyDirectory(revision1.toFile(), revision2.toFile());
-        List<Path> removedFiles = new NoneNoneFiles(revision2).removeNoneNone(filesXml);
-        XmlUtil.writeFilesXml(revision2, filesXml);
-        removePayloadsFromManifest(removedFiles, updateBagVersion(revision2, revision1));
 
-        SpringfieldFiles springfieldFiles = new SpringfieldFiles(revision3, filesXml, pseudoFileSources.getSpringFieldFiles(inputBagParentName));
+        SpringfieldFiles springfieldFiles = new SpringfieldFiles(revision2, filesXml, pseudoFileSources.getSpringFieldFiles(inputBagParentName));
         if (springfieldFiles.hasFilesToAdd()) {
-            log.info("Creating revision 3: {} ### {}", inputBagParentName, revision3.getParent().getFileName());
-            copyDirectory(revision2.toFile(), revision3.toFile());
             springfieldFiles.addFiles(placeHolders);
-            XmlUtil.writeFilesXml(revision3, filesXml);
-            updateManifests(updateBagVersion(revision3, revision3));
-            createdBags += 3;
+            XmlUtil.writeFilesXml(revision2, filesXml);
+            updateManifests(updateBagVersion(revision2, revision1));
+            createdBags++;
         }
         else {
-            createdBags += 2;
+            log.error("No streaming files found for {}", inputBagParentName);
         }
         processed++;
 
         moveStaged(revision1);
-        moveStaged(revision2);
         if (springfieldFiles.hasFilesToAdd()) {
-            moveStaged(revision3);
+            moveStaged(revision2);
         }
-        FileUtils.deleteDirectory(inputBagDir.getParent().toFile());
-        log.info("Finished {} ## {} ## {}",
-            revision1.getParent().getFileName(),
-            revision2.getParent().getFileName(),
-            springfieldFiles.hasFilesToAdd()
-                ? revision3.getParent().getFileName()
-                : ""
-        );
+        // TODO: make removal of input bag optional
+        //FileUtils.deleteDirectory(inputBagDir.getParent().toFile());
     }
 
     private void moveStaged(Path bagDir) throws IOException {
@@ -182,5 +170,9 @@ public class AVConverter {
             bagDir.resolve(destination).toFile(),
             true
         );
+    }
+
+    private static void removePayloadFile(Path bagDir, String destination) throws IOException {
+        Files.deleteIfExists(bagDir.resolve(destination));
     }
 }

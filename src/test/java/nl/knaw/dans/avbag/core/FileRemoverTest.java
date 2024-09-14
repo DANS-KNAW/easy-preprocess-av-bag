@@ -24,14 +24,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createDirectories;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class NoneNoneFilesTest extends AbstractTestWithTestDir {
+public class FileRemoverTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_throw_because_a_file_to_delete_does_not_exist() throws Exception {
@@ -52,11 +51,11 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
             "</files>"
         ))).getBytes(UTF_8));
 
-        NoneNoneFiles noneNoneFiles = new NoneNoneFiles(bagDir);
+        FileRemover noneNoneFiles = new FileRemover(bagDir);
         Document filesXmlDoc = XmlUtil.readXml(filesXml);
 
         assertThatThrownBy(() -> noneNoneFiles
-            .removeNoneNone(filesXmlDoc)
+            .removeFiles(filesXmlDoc, new FilesToBeRemovedFilter(Arrays.asList()))
         ).isInstanceOf(IOException.class)
             .hasMessage("1234: Could not delete target/test/NoneNoneFilesTest/1234/5678/data/some.txt");
     }
@@ -97,10 +96,10 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
             "</files>"
         ))).getBytes(UTF_8));
 
-        NoneNoneFiles noneNoneFiles = new NoneNoneFiles(bagDir);
+        FileRemover noneNoneFiles = new FileRemover(bagDir);
         Document filesXmlDoc = XmlUtil.readXml(filesXml);
 
-        assertThat(noneNoneFiles.removeNoneNone(filesXmlDoc))
+        assertThat(noneNoneFiles.removeFiles(filesXmlDoc, new FilesToBeRemovedFilter(Arrays.asList())))
             .containsExactlyInAnyOrderElementsOf(Arrays.asList(
                 Paths.get("data/some.txt"),
                 Paths.get("data/some2.txt")
@@ -121,10 +120,10 @@ public class NoneNoneFilesTest extends AbstractTestWithTestDir {
             "</files>"
         ))).getBytes(UTF_8));
 
-        NoneNoneFiles noneNoneFiles = new NoneNoneFiles(bagDir);
+        FileRemover noneNoneFiles = new FileRemover(bagDir);
         Document filesXmlDoc = XmlUtil.readXml(filesXml);
 
-        assertThat(noneNoneFiles.removeNoneNone(filesXmlDoc))
+        assertThat(noneNoneFiles.removeFiles(filesXmlDoc, new FilesToBeRemovedFilter(Arrays.asList())))
             .isEmpty();
     }
 }

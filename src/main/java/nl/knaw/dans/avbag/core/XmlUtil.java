@@ -16,7 +16,9 @@
 package nl.knaw.dans.avbag.core;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -34,6 +36,9 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.function.Predicate;
 
 public class XmlUtil {
     public static Document readXml(Path path) throws ParserConfigurationException, IOException, SAXException {
@@ -45,6 +50,25 @@ public class XmlUtil {
         return factory
             .newDocumentBuilder()
             .parse(path.toFile());
+    }
+
+    public static Predicate<Element> hasFilePathIn(List<Path> filepaths) {
+        return element -> filepaths.contains(Paths.get(element.getAttribute("filepath")));
+    }
+
+    public static boolean isAccessibleToNone(Node fileElement) {
+        return isNone(fileElement, "accessibleToRights");
+    }
+
+    public static boolean isVisibleToNone(Node fileElement) {
+        return isNone(fileElement, "visibleToRights");
+    }
+
+    public static boolean isNone(Node fileElement, String tag) {
+        NodeList elements = ((Element) fileElement).getElementsByTagName(tag);
+        if (elements.getLength() == 0)
+            return true;
+        return "NONE".equals(elements.item(0).getTextContent());
     }
 
     public static void writeFilesXml(Path bagDir, Document filesXml) throws IOException, TransformerException {
