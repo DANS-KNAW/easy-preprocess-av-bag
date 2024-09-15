@@ -21,6 +21,8 @@ import nl.knaw.dans.avbag.core.AVConverter;
 import nl.knaw.dans.avbag.core.PseudoFileSources;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 import javax.validation.constraints.NotNull;
 import java.nio.file.Path;
@@ -46,6 +48,10 @@ public class ConvertCommand implements Callable<Integer> {
                             description = "The directory where the converted dataset will be stored.")
     private Path outputDir;
 
+    @Option(names = "--keep-input, -k",
+            description = "Keep the input files after conversion.")
+    private boolean keepInput;
+
     public ConvertCommand(PseudoFileSourcesConfig config, @NotNull Path stagingDir) {
         this.config = config;
         this.stagingDir = stagingDir;
@@ -54,7 +60,7 @@ public class ConvertCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         try {
-            new AVConverter(inputDir, outputDir, stagingDir, new PseudoFileSources(config))
+            new AVConverter(inputDir, outputDir, stagingDir, new PseudoFileSources(config), keepInput)
                 .convertAll();
         }
         catch (Exception e) {

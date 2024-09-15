@@ -45,7 +45,6 @@ public class FileRemover {
         NodeList fileList = mutatedFilesXml.getElementsByTagName("file");
         for (int i = 0; i < fileList.getLength(); i++) {
             Element fileElement = (Element) fileList.item(i);
-//            if (isNone(fileElement, "accessibleToRights") && isNone(fileElement, "visibleToRights")) {
             if(removeWhen.test(fileElement)) {
                 String filepath = fileElement.getAttribute("filepath");
                 filesWithNoneNone.add(Paths.get(filepath));

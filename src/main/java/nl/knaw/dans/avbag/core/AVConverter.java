@@ -15,6 +15,8 @@
  */
 package nl.knaw.dans.avbag.core;
 
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.knaw.dans.bagit.exceptions.InvalidBagitFileFormatException;
 import nl.knaw.dans.bagit.exceptions.MaliciousPathException;
@@ -45,21 +47,25 @@ import static nl.knaw.dans.avbag.core.XmlUtil.readXml;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 
 @Slf4j
+@RequiredArgsConstructor
 public class AVConverter {
+    @NonNull
     private final Path inputDir;
+    @NonNull
     private final Path outputDir;
+    @NonNull
     private final Path stagingDir;
+    @NonNull
     private final PseudoFileSources pseudoFileSources;
+    private final boolean keepInput;
+
     private long processed = 0L;
     private long createdBags = 0L;
     private long failedBags = 0L;
     private long doneBefore = 0L;
 
-    public AVConverter(Path inputDir, Path outputDir, Path stagingDir, PseudoFileSources pseudoFileSources) {
-        this.inputDir = inputDir;
-        this.outputDir = outputDir;
-        this.stagingDir = stagingDir;
-        this.pseudoFileSources = pseudoFileSources;
+    AVConverter(Path inputDir, Path outputDir, Path stagingDir, PseudoFileSources pseudoFileSources) {
+        this(inputDir, outputDir, stagingDir, pseudoFileSources, false);
     }
 
     public void convertAll() throws IOException {
@@ -154,8 +160,9 @@ public class AVConverter {
         if (springfieldFiles.hasFilesToAdd()) {
             moveStaged(revision2);
         }
-        // TODO: make removal of input bag optional
-        //FileUtils.deleteDirectory(inputBagDir.getParent().toFile());
+        if (!keepInput) {
+            FileUtils.deleteDirectory(inputBagDir.getParent().toFile());
+        }
     }
 
     private void moveStaged(Path bagDir) throws IOException {

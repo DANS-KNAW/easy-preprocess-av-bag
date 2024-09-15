@@ -57,7 +57,7 @@ public class FileRemoverTest extends AbstractTestWithTestDir {
         assertThatThrownBy(() -> noneNoneFiles
             .removeFiles(filesXmlDoc, new FilesToBeRemovedFilter(Arrays.asList()))
         ).isInstanceOf(IOException.class)
-            .hasMessage("1234: Could not delete target/test/NoneNoneFilesTest/1234/5678/data/some.txt");
+            .hasMessage("1234: Could not delete %s/data/some.txt", bagDir);
     }
 
     @Test
