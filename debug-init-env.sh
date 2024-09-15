@@ -19,3 +19,18 @@ echo -n "Pre-creating log..."
 TEMPDIR=data
 touch $TEMPDIR/easy-preprocess-av-bag.log
 echo "OK"
+
+echo -n "Creating test directories..."
+mkdir $TEMPDIR/darkarchive
+mkdir $TEMPDIR/staging
+mkdir $TEMPDIR/output-bags
+mkdir $TEMPDIR/output-deposits
+echo "OK"
+
+echo -n "Copying input files..."
+cp -r src/test/resources/integration/input-bags $TEMPDIR/
+cp -r src/test/resources/integration/springfield $TEMPDIR/
+cp -r src/test/resources/integration/darkarchive $TEMPDIR/
+cp -r src/test/resources/integration/input-bags $TEMPDIR/input-bags-copy
+cp src/test/resources/integration/sources.csv $TEMPDIR/
+echo "OK"
