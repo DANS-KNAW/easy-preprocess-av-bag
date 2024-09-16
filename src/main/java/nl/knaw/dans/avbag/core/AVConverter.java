@@ -146,13 +146,11 @@ public class AVConverter {
         copyDirectory(revision1.toFile(), revision2.toFile());
 
         if (springfieldFiles.hasFilesToAdd()) {
+            springfieldFiles.checkFilesXmlContainsAllSpringfieldFileIdsFromSources(filesXml);
             springfieldFiles.addFiles(placeHolders, revision2);
             XmlUtil.writeFilesXml(revision2, filesXml);
             updateManifests(updateBagVersion(revision2, revision1));
             createdBags++;
-        }
-        else {
-            log.error("No streaming files found for {}", inputBagParentName);
         }
         processed++;
 

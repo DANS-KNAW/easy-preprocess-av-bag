@@ -50,9 +50,20 @@ public class SpringfieldFiles {
                 idToElement.put(idElem.getTextContent(), (Element) idElem.getParentNode());
             }
         }
-        if (idToElement.size() != springfieldFiles.size()) {
+    }
+
+    public void checkFilesXmlContainsAllSpringfieldFileIdsFromSources(Document filesXml) {
+        NodeList idElems = filesXml.getElementsByTagName("dct:identifier");
+        Map<String, Element> idToElement2 = new HashMap<>();
+        for (int i = 0; i < idElems.getLength(); i++) {
+            Element idElem = (Element) idElems.item(i);
+            if (springfieldFiles.containsKey(idElem.getTextContent())) {
+                idToElement2.put(idElem.getTextContent(), (Element) idElem.getParentNode());
+            }
+        }
+        if (idToElement2.size() < springfieldFiles.size()) {
             // adding the bagParent is of no use as the bag is not yet created
-            throw new IllegalStateException("Not all springfield files in the mapping are present in the second bag");
+            throw new IllegalStateException("Not all springfield files in sources.csv have matching easy-file ID in files.xml");
         }
     }
 

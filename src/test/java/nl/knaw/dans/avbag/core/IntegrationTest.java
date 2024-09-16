@@ -192,8 +192,8 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         assertThat(stdout.toString()).contains("processed=5, failed=0, created=10, doneBefore=0");
     }
 
-    //@Test
-    public void creates_an_empty_second_bag_with_all_files_none_none() throws Exception {
+    @Test
+    public void should_create_empty_bag_when_all_files_are_none_none() throws Exception {
         String bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
 
         FileUtils.copyDirectory(
@@ -203,6 +203,8 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         // removing all rights elements from files.xml defaults to None/None
         Path filesXmlFile = mutableInput.resolve(bagParent + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
+
+        // TODO: set NONE/NONE explicitly.
         List<String> xmlLines = readAllLines(filesXmlFile).stream()
             .filter(line -> !line.contains("ToRights"))
             .collect(Collectors.toList());
@@ -212,17 +214,16 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         List<String> logLines = loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage).collect(Collectors.toList());
 
-        // third bag aborted
+        // second bag aborted
         ILoggingEvent last = loggedEvents.list.get(logLines.size() - 1);
         assertThat(last.getFormattedMessage()).endsWith(bagParent + " failed, it may or may not have (incomplete) bags in target/test/IntegrationTest/staged-bags");
         assertThat(last.getLevel()).isEqualTo(Level.ERROR);
-        assertThat(last.getThrowableProxy().getMessage()).endsWith("Not all springfield files in the mapping are present in the second bag");
+        assertThat(last.getThrowableProxy().getMessage()).endsWith("Not all springfield files in sources.csv have matching easy-file ID in files.xml");
 
-        String secondBagParent = loggedEvents.list.get(logLines.size() - 2).getFormattedMessage().split("## ")[1];
-        Path secondBag = Files.list(stagedBags.resolve(secondBagParent)).collect(Collectors.toList()).get(0);
-        assertThat(secondBag.resolve("manifest-sha1.txt"))
+        Path bag = Files.list(stagedBags.resolve(bagParent)).collect(Collectors.toList()).get(0);
+        assertThat(bag.resolve("manifest-sha1.txt"))
             .isEmptyFile();
-        assertThat(secondBag.resolve("data"))
+        assertThat(bag.resolve("data"))
             .doesNotExist();
     }
 

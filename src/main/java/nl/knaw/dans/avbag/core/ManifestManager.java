@@ -122,7 +122,10 @@ public abstract class ManifestManager {
             protected void modifyPayloads(Set<Manifest> payLoadManifests) throws NoSuchAlgorithmException, IOException {
                 Map<Manifest, MessageDigest> payloadFilesMap = getManifestToDigestMap(payLoadManifests);
                 long beforeWalk = now().toNanoOfDay();
-                Files.walkFileTree(bag.getRootDir().resolve("data"), new CreatePayloadManifestsVistor(payloadFilesMap, true));
+                Path dataDir = bag.getRootDir().resolve("data");
+                if (Files.exists(dataDir)) {
+                    Files.walkFileTree(dataDir, new CreatePayloadManifestsVistor(payloadFilesMap, true));
+                }
                 long afterWalk = now().toNanoOfDay();
 
                 // statistics: is it worth to calculate only the changed files?
