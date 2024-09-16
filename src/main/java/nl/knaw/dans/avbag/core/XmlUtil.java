@@ -15,6 +15,7 @@
  */
 package nl.knaw.dans.avbag.core;
 
+import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -31,10 +32,12 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -51,6 +54,18 @@ public class XmlUtil {
             .newDocumentBuilder()
             .parse(path.toFile());
     }
+
+    public static Document readXmlFromString(String xml) throws ParserConfigurationException, IOException, SAXException {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setNamespaceAware(true);
+
+        return factory
+            .newDocumentBuilder()
+            .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+    }
+
 
     public static Predicate<Element> hasFilePathIn(List<Path> filepaths) {
         return element -> filepaths.contains(Paths.get(element.getAttribute("filepath")));

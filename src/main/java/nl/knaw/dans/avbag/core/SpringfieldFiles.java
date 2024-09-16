@@ -17,6 +17,7 @@ package nl.knaw.dans.avbag.core;
 
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import nl.knaw.dans.avbag.core.FileElements.FileElement;
 import nl.knaw.dans.bagit.exceptions.InvalidBagitFileFormatException;
 import nl.knaw.dans.bagit.exceptions.MaliciousPathException;
 import nl.knaw.dans.bagit.exceptions.UnparsableVersionException;
@@ -45,47 +46,18 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 @Slf4j
 public class SpringfieldFiles {
-    @Value
-    private static class FileElement {
-        String fileId;
-        String filePath;
-        String accessibleToRights;
-        String visibleToRights;
-    }
-
     private final Map<String, Path> springfieldFiles; // easy-file ID -> path to file in springfield dir
     private List<FileElement> filesInInputFilesXml = new ArrayList<>(); // easy-file ID -> <dct:identifier> element in orgFilesXml
 
     public SpringfieldFiles(Path bagDir, PseudoFileSources pseudoFileSources) throws IOException, ParserConfigurationException, SAXException {
         Document orgFilesXmlCopy = XmlUtil.readXml(bagDir.resolve("metadata/files.xml"));
         this.springfieldFiles = pseudoFileSources.getSpringFieldFiles(bagDir.getParent().getFileName().toString());
-        filesInInputFilesXml = getFileElements(orgFilesXmlCopy);
-    }
-
-    private static List<FileElement> getFileElements(Document filesXml) {
-        NodeList fileElements = filesXml.getElementsByTagName("file");
-        List<FileElement> fileElementList = new ArrayList<>();
-        for (int i = 0; i < fileElements.getLength(); i++) {
-            Element fileElement = (Element) fileElements.item(i);
-            fileElementList.add(getFileElement(fileElement));
-        }
-        return fileElementList;
-    }
-
-    private static FileElement getFileElement(Element fileElement) {
-        Element accessibleToRights = (Element) fileElement.getElementsByTagName("accessibleToRights").item(0);
-        Element visibleToRights = (Element) fileElement.getElementsByTagName("visibleToRights").item(0);
-        return new FileElement(
-            fileElement.getElementsByTagName("dct:identifier").item(0).getTextContent(),
-            fileElement.getAttribute("filepath"),
-            StringUtils.trim(accessibleToRights.getTextContent()),
-            StringUtils.trim(visibleToRights.getTextContent())
-        );
+        filesInInputFilesXml = FileElements.read(orgFilesXmlCopy);
     }
 
     public void checkFilesXmlContainsAllSpringfieldFileIdsFromSources(Path modifiedBagDir) throws IOException, ParserConfigurationException, SAXException {
         Document filesXml = XmlUtil.readXml(modifiedBagDir.resolve("metadata/files.xml"));
-        List<FileElement> newFileElements = getFileElements(filesXml);
+        List<FileElement> newFileElements = FileElements.read(filesXml);
         if (newFileElements.size() < springfieldFiles.size()) {
             // adding the bagParent is of no use as the bag is not yet created
             throw new IllegalStateException("Not all springfield files in sources.csv have matching easy-file ID in files.xml");
