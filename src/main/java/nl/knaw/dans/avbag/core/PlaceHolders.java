@@ -19,7 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static nl.knaw.dans.avbag.core.XmlUtil.writeFilesXml;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 @Slf4j
@@ -43,14 +47,14 @@ public class PlaceHolders {
 
     /**
      * @param bagDir   the directory of the bag
-     * @param filesXml the files.xml document of the bag, which will be modified by removing <dct:source> elements
      * @throws IOException if the files.xml document cannot be read
      */
-    public PlaceHolders(Path bagDir, Document filesXml) throws IOException {
-        this.filesXml = filesXml;
+    public PlaceHolders(Path bagDir) throws IOException, ParserConfigurationException, SAXException, TransformerException {
+        this.filesXml = XmlUtil.readXml(bagDir.resolve("metadata/files.xml"));
         this.bagDir = bagDir;
         bagParent = bagDir.getParent().getFileName();
         find();
+        writeFilesXml(bagDir, filesXml);
     }
 
     public boolean hasSameFileIds(PseudoFileSources pseudoFileSources) {

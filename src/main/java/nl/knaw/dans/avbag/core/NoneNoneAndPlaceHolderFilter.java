@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.function.Predicate;
 
 @AllArgsConstructor
-public class FilesToBeRemovedFilter implements Predicate<Element> {
-    private final List<Path> filepaths;
+public class NoneNoneAndPlaceHolderFilter implements Predicate<Element> {
+    private final PlaceHolders placeHolders;
 
     @Override
     public boolean test(Element element) {
-        return filepaths.contains(Paths.get(element.getAttribute("filepath"))) || (
+        return placeHolders.getPaths().contains(Paths.get(element.getAttribute("filepath"))) || (
             XmlUtil.isAccessibleToNone(element) && XmlUtil.isVisibleToNone(element)
         );
     }

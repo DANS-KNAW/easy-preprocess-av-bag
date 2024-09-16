@@ -15,75 +15,105 @@
  */
 package nl.knaw.dans.avbag.core;
 
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import nl.knaw.dans.bagit.exceptions.InvalidBagitFileFormatException;
+import nl.knaw.dans.bagit.exceptions.MaliciousPathException;
+import nl.knaw.dans.bagit.exceptions.UnparsableVersionException;
+import nl.knaw.dans.bagit.exceptions.UnsupportedAlgorithmException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
+import static nl.knaw.dans.avbag.core.BagInfoManager.updateBagVersion;
+import static nl.knaw.dans.avbag.core.ManifestManager.updateManifests;
 import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 @Slf4j
 public class SpringfieldFiles {
-
-    private final Document filesXml;
-    private final Map<String, Path> springfieldFiles;
-    private final Map<String, Element> idToElement = new HashMap<>();
-
-    public SpringfieldFiles(Document filesXml, Map<String, Path> springfieldFiles) {
-        this.filesXml = filesXml;
-        this.springfieldFiles = springfieldFiles;
-        NodeList idElems = filesXml.getElementsByTagName("dct:identifier");
-        for (int i = 0; i < idElems.getLength(); i++) {
-            Element idElem = (Element) idElems.item(i);
-            if (springfieldFiles.containsKey(idElem.getTextContent())) {
-                idToElement.put(idElem.getTextContent(), (Element) idElem.getParentNode());
-            }
-        }
+    @Value
+    private static class FileElement {
+        String fileId;
+        String filePath;
+        String accessibleToRights;
+        String visibleToRights;
     }
 
-    public void checkFilesXmlContainsAllSpringfieldFileIdsFromSources(Document filesXml) {
-        NodeList idElems = filesXml.getElementsByTagName("dct:identifier");
-        Map<String, Element> idToElement2 = new HashMap<>();
-        for (int i = 0; i < idElems.getLength(); i++) {
-            Element idElem = (Element) idElems.item(i);
-            if (springfieldFiles.containsKey(idElem.getTextContent())) {
-                idToElement2.put(idElem.getTextContent(), (Element) idElem.getParentNode());
-            }
+    private final Map<String, Path> springfieldFiles; // easy-file ID -> path to file in springfield dir
+    private List<FileElement> filesInInputFilesXml = new ArrayList<>(); // easy-file ID -> <dct:identifier> element in orgFilesXml
+
+    public SpringfieldFiles(Path bagDir, PseudoFileSources pseudoFileSources) throws IOException, ParserConfigurationException, SAXException {
+        Document orgFilesXmlCopy = XmlUtil.readXml(bagDir.resolve("metadata/files.xml"));
+        this.springfieldFiles = pseudoFileSources.getSpringFieldFiles(bagDir.getParent().getFileName().toString());
+        filesInInputFilesXml = getFileElements(orgFilesXmlCopy);
+    }
+
+    private static List<FileElement> getFileElements(Document filesXml) {
+        NodeList fileElements = filesXml.getElementsByTagName("file");
+        List<FileElement> fileElementList = new ArrayList<>();
+        for (int i = 0; i < fileElements.getLength(); i++) {
+            Element fileElement = (Element) fileElements.item(i);
+            fileElementList.add(getFileElement(fileElement));
         }
-        if (idToElement2.size() < springfieldFiles.size()) {
+        return fileElementList;
+    }
+
+    private static FileElement getFileElement(Element fileElement) {
+        Element accessibleToRights = (Element) fileElement.getElementsByTagName("accessibleToRights").item(0);
+        Element visibleToRights = (Element) fileElement.getElementsByTagName("visibleToRights").item(0);
+        return new FileElement(
+            fileElement.getElementsByTagName("dct:identifier").item(0).getTextContent(),
+            fileElement.getAttribute("filepath"),
+            StringUtils.trim(accessibleToRights.getTextContent()),
+            StringUtils.trim(visibleToRights.getTextContent())
+        );
+    }
+
+    public void checkFilesXmlContainsAllSpringfieldFileIdsFromSources(Path modifiedBagDir) throws IOException, ParserConfigurationException, SAXException {
+        Document filesXml = XmlUtil.readXml(modifiedBagDir.resolve("metadata/files.xml"));
+        List<FileElement> newFileElements = getFileElements(filesXml);
+        if (newFileElements.size() < springfieldFiles.size()) {
             // adding the bagParent is of no use as the bag is not yet created
             throw new IllegalStateException("Not all springfield files in sources.csv have matching easy-file ID in files.xml");
         }
     }
 
     public boolean hasFilesToAdd() {
-        return !idToElement.isEmpty();
+        return !filesInInputFilesXml.isEmpty();
     }
 
-    public void addFiles(PlaceHolders placeHolders, Path bagDir) throws IOException {
+    public void addFiles(PlaceHolders placeHolders, Path bagDir, Path bagDirPreviousVersion)
+        throws IOException, ParserConfigurationException, SAXException, TransformerException, MaliciousPathException, UnparsableVersionException, UnsupportedAlgorithmException,
+        InvalidBagitFileFormatException, NoSuchAlgorithmException {
+        Document newFilesXml = XmlUtil.readXml(bagDir.resolve("metadata/files.xml"));
         List<Node> newFileList = new ArrayList<>();
-        for (Map.Entry<String, Element> entry : idToElement.entrySet()) {
-            String fileId = entry.getKey();
+        for (FileElement fileInInputFilesXml : filesInInputFilesXml) {
+            String fileId = fileInInputFilesXml.getFileId();
             String added = addPayloadFile(springfieldFiles.get(fileId), placeHolders.getDestPath(fileId), bagDir);
-            Element newFileElement = newFileElement(added, entry.getValue());
+            Element newFileElement = newFileElement(added, fileInInputFilesXml, newFilesXml);
             newFileList.add(newFileElement);
         }
         // separate loops to not interfere prematurely
         for (Node newFile : newFileList) {
-            filesXml.getElementsByTagName("files").item(0)
+            newFilesXml.getElementsByTagName("files").item(0)
                 .appendChild(newFile);
         }
+        XmlUtil.writeFilesXml(bagDir, newFilesXml);
+        updateManifests(updateBagVersion(bagDir, bagDirPreviousVersion));
     }
 
     private String addPayloadFile(Path source, String placeHolder, Path bagDir) throws IOException {
@@ -102,18 +132,17 @@ public class SpringfieldFiles {
         return destination;
     }
 
-    private Element newFileElement(String addedFilePath, Element oldFileElement) {
-        Element newElement = filesXml.createElement("file");
+    private Element newFileElement(String addedFilePath, FileElement fileElementInOldFilesXml, Document newFilesXml) {
+        Element newElement = newFilesXml.createElement("file");
         newElement.setAttribute("filepath", addedFilePath);
-        newElement.appendChild(newRightsElement("accessibleToRights", oldFileElement));
-        newElement.appendChild(newRightsElement("visibleToRights", oldFileElement));
+        newElement.appendChild(newRightsElement("accessibleToRights", fileElementInOldFilesXml.getAccessibleToRights(), newFilesXml));
+        newElement.appendChild(newRightsElement("visibleToRights", fileElementInOldFilesXml.getVisibleToRights(), newFilesXml));
         return newElement;
     }
 
-    private Element newRightsElement(String tag, Element oldFileElement) {
-        Element oldRights = (Element) oldFileElement.getElementsByTagName(tag).item(0);
-        Element rightsElement = filesXml.createElement(oldRights.getTagName());
-        rightsElement.setTextContent(oldRights.getTextContent());
+    private Element newRightsElement(String tag, String text, Document newFilesXml) {
+        Element rightsElement = newFilesXml.createElement(tag);
+        rightsElement.setTextContent(text);
         return rightsElement;
     }
 }

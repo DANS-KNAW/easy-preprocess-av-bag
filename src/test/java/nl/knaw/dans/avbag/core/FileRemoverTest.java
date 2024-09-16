@@ -16,6 +16,10 @@
 package nl.knaw.dans.avbag.core;
 
 import nl.knaw.dans.avbag.AbstractTestWithTestDir;
+import nl.knaw.dans.bagit.creator.BagCreator;
+import nl.knaw.dans.bagit.domain.Bag;
+import nl.knaw.dans.bagit.hash.StandardSupportedAlgorithms;
+import nl.knaw.dans.bagit.writer.BagWriter;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
@@ -23,10 +27,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createDirectories;
+import static nl.knaw.dans.avbag.core.ManifestManager.updateManifests;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -34,7 +41,10 @@ public class FileRemoverTest extends AbstractTestWithTestDir {
 
     @Test
     public void should_throw_because_a_file_to_delete_does_not_exist() throws Exception {
+        // Given
         Path bagDir = testDir.resolve("1234/5678");
+        createDirectories(bagDir);
+        Bag bag = BagCreator.bagInPlace(bagDir, Collections.singletonList(StandardSupportedAlgorithms.SHA1), false);
         Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         Files.write(filesXml, String.join("\n", String.join("\n", Arrays.asList(
@@ -50,25 +60,26 @@ public class FileRemoverTest extends AbstractTestWithTestDir {
             "    </file>",
             "</files>"
         ))).getBytes(UTF_8));
+        updateManifests(bag);
 
-        FileRemover noneNoneFiles = new FileRemover(bagDir);
-        Document filesXmlDoc = XmlUtil.readXml(filesXml);
-
-        assertThatThrownBy(() -> noneNoneFiles
-            .removeFiles(filesXmlDoc, new FilesToBeRemovedFilter(Arrays.asList()))
+        // When / Then
+        FileRemover remover = new FileRemover(bagDir);
+        assertThatThrownBy(() -> remover
+            .removeFiles(new NoneNoneAndPlaceHolderFilter(new PlaceHolders(bagDir)))
         ).isInstanceOf(IOException.class)
             .hasMessage("1234: Could not delete %s/data/some.txt", bagDir);
     }
 
     @Test
     public void should_return_removed_files() throws Exception {
+        // Given
         Path bagDir = testDir.resolve("1234/5678");
+        createDirectories(bagDir);
+        Files.createFile(bagDir.resolve("some.txt"));
+        Files.createFile(bagDir.resolve("some2.txt"));
+        Bag bag = BagCreator.bagInPlace(bagDir, Collections.singletonList(StandardSupportedAlgorithms.SHA1), false);
         Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
-        createDirectories(bagDir.resolve("data"));
-        Files.createFile(bagDir.resolve("data/some.txt"));
-        Files.createFile(bagDir.resolve("data/some2.txt"));
-
         Files.write(filesXml, String.join("\n", String.join("\n", Arrays.asList(
             "<?xml version='1.0' encoding='UTF-8'?>",
             "<files xsi:schemaLocation='http://easy.dans.knaw.nl/schemas/bag/metadata/files/ http://easy.dans.knaw.nl/schemas/bag/metadata/files/files.xsd'",
@@ -95,11 +106,12 @@ public class FileRemoverTest extends AbstractTestWithTestDir {
             "    </file>",
             "</files>"
         ))).getBytes(UTF_8));
+        updateManifests(bag);
 
-        FileRemover noneNoneFiles = new FileRemover(bagDir);
-        Document filesXmlDoc = XmlUtil.readXml(filesXml);
-
-        assertThat(noneNoneFiles.removeFiles(filesXmlDoc, new FilesToBeRemovedFilter(Arrays.asList())))
+        // When
+        FileRemover remover = new FileRemover(bagDir);
+        assertThat(remover.removeFiles(new NoneNoneAndPlaceHolderFilter(new PlaceHolders(bagDir))))
+            // Then
             .containsExactlyInAnyOrderElementsOf(Arrays.asList(
                 Paths.get("data/some.txt"),
                 Paths.get("data/some2.txt")
@@ -108,7 +120,12 @@ public class FileRemoverTest extends AbstractTestWithTestDir {
 
     @Test
     public void empty_files_xml_should_return_empty_list() throws Exception {
+        // Given
         Path bagDir = testDir.resolve("1234/5678");
+        createDirectories(bagDir);
+        Files.createFile(bagDir.resolve("some.txt"));
+        Files.createFile(bagDir.resolve("some2.txt"));
+        Bag bag = BagCreator.bagInPlace(bagDir, Collections.singletonList(StandardSupportedAlgorithms.SHA1), false);
         Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());
         Files.write(filesXml, String.join("\n", String.join("\n", Arrays.asList(
@@ -119,11 +136,13 @@ public class FileRemoverTest extends AbstractTestWithTestDir {
             "       xmlns:dct='http://purl.org/dc/terms/'>",
             "</files>"
         ))).getBytes(UTF_8));
+        updateManifests(bag);
 
-        FileRemover noneNoneFiles = new FileRemover(bagDir);
-        Document filesXmlDoc = XmlUtil.readXml(filesXml);
+        // When
+        FileRemover remover = new FileRemover(bagDir);
 
-        assertThat(noneNoneFiles.removeFiles(filesXmlDoc, new FilesToBeRemovedFilter(Arrays.asList())))
+        // Then
+        assertThat(remover.removeFiles(new NoneNoneAndPlaceHolderFilter(new PlaceHolders(bagDir))))
             .isEmpty();
     }
 }

@@ -22,9 +22,7 @@ import nl.knaw.dans.bagit.exceptions.InvalidBagitFileFormatException;
 import nl.knaw.dans.bagit.exceptions.MaliciousPathException;
 import nl.knaw.dans.bagit.exceptions.UnparsableVersionException;
 import nl.knaw.dans.bagit.exceptions.UnsupportedAlgorithmException;
-import nl.knaw.dans.bagit.reader.BagReader;
 import org.apache.commons.io.FileUtils;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -34,16 +32,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.text.MessageFormat;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.text.MessageFormat.format;
-import static nl.knaw.dans.avbag.core.BagInfoManager.getBag;
-import static nl.knaw.dans.avbag.core.BagInfoManager.updateBagVersion;
-import static nl.knaw.dans.avbag.core.ManifestManager.removePayloadsFromManifest;
-import static nl.knaw.dans.avbag.core.ManifestManager.updateManifests;
-import static nl.knaw.dans.avbag.core.XmlUtil.readXml;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 
 @Slf4j
@@ -62,7 +54,6 @@ public class AVConverter {
     private long processed = 0L;
     private long createdBags = 0L;
     private long failedBags = 0L;
-    private long doneBefore = 0L;
 
     AVConverter(Path inputDir, Path outputDir, Path stagingDir, PseudoFileSources pseudoFileSources) {
         this(inputDir, outputDir, stagingDir, pseudoFileSources, false);
@@ -78,21 +69,20 @@ public class AVConverter {
             pathStream.filter(this::notSelfOrChild)
                 .forEach(this::convertOne);
         }
-        System.out.println(format("Conversion finished. Bags processed={6}, failed={7}, created={8}, doneBefore={9}. In directories: {3}={0}, {4}={1}, {5}={2}",
-            getCount(inputDir),
-            getCount(stagingDir),
-            getCount(outputDir),
+        System.out.println(format("Conversion finished. Bags processed={6}, failed={7}, created={8}. In directories: {3}={0}, {4}={1}, {5}={2}",
+            getSubdirCount(inputDir),
+            getSubdirCount(stagingDir),
+            getSubdirCount(outputDir),
             inputDir,
             stagingDir,
             outputDir,
             processed,
             failedBags,
-            createdBags,
-            doneBefore
+            createdBags
         ));
     }
 
-    private long getCount(Path inputDir) throws IOException {
+    private long getSubdirCount(Path inputDir) throws IOException {
         try (Stream<Path> list = Files.list(inputDir)) {
             return list.count();
         }
@@ -102,82 +92,64 @@ public class AVConverter {
         return !path.getParent().equals(inputDir) && !path.equals(inputDir);
     }
 
-    private void convertOne(Path bag) {
-        Path bagParent = bag.getParent().getFileName();
+    private void convertOne(Path inputBag) {
+        Path bagParent = inputBag.getParent().getFileName();
         if (outputDir.resolve(bagParent).toFile().exists()) {
-            doneBefore++;
-            log.error("Skipped {}, it exists in {}", bagParent, outputDir);
-            return;
+            throw new IllegalStateException(format("Output directory already exists: {0}", outputDir.resolve(bagParent)));
         }
         try {
-            Document filesXml = readXml(bag.resolve("metadata/files.xml"));
-            PlaceHolders ph = new PlaceHolders(bag, filesXml);
+            PlaceHolders ph = new PlaceHolders(inputBag);
             if (ph.hasSameFileIds(pseudoFileSources)) {
-                createBags(bag, ph, filesXml);
+                createOutputBags(inputBag, ph);
             }
         }
         catch (Exception e) {
             log.error(MessageFormat.format(
                 "{0} failed, it may or may not have (incomplete) bags in {1}",
-                bag.getParent().getFileName(),
+                inputBag.getParent().getFileName(),
                 stagingDir
             ), e);
             failedBags++;
         }
     }
 
-    private void createBags(Path inputBagDir, PlaceHolders placeHolders, Document filesXml)
+    private void createOutputBags(Path inputBagDir, PlaceHolders placeHolders)
         throws IOException, TransformerException, MaliciousPathException, UnparsableVersionException, UnsupportedAlgorithmException,
         InvalidBagitFileFormatException, NoSuchAlgorithmException, ParserConfigurationException, SAXException {
-        String inputBagParentName = inputBagDir.getParent().getFileName().toString();
-        SpringfieldFiles springfieldFiles = new SpringfieldFiles(filesXml, pseudoFileSources.getSpringFieldFiles(inputBagParentName));
-        Path revision1 = stagingDir.resolve(inputBagParentName).resolve(inputBagDir.getFileName());
-        Path revision2 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
+        SpringfieldFiles springfieldFiles = new SpringfieldFiles(inputBagDir, pseudoFileSources);
 
-        log.info("Creating revision 1: {} ### {}", inputBagParentName, revision1.getParent().getFileName());
-        copyDirectory(inputBagDir.toFile(), revision1.toFile());
-        List<Path> removedFiles = new FileRemover(revision1).removeFiles(filesXml, new FilesToBeRemovedFilter(placeHolders.getPaths()));
-        XmlUtil.writeFilesXml(revision1, filesXml);
-        removedFiles.addAll(placeHolders.getPaths()); // So that are also removed from the manifest
-        removePayloadsFromManifest(removedFiles, getBag(revision1));
-        updateManifests(new BagReader().read(revision1));
-        createdBags++;
-        log.info("Creating revision 2: {} ### {}", inputBagParentName, revision2.getParent().getFileName());
-        copyDirectory(revision1.toFile(), revision2.toFile());
+        String inputBagParentName = inputBagDir.getParent().getFileName().toString();
+        Path outputBagRevision1 = stagingDir.resolve(inputBagParentName).resolve(inputBagDir.getFileName());
+        Path outputBagRevision2 = stagingDir.resolve(UUID.randomUUID().toString()).resolve(UUID.randomUUID().toString());
+
+        log.info("Creating revision 1: {} ### {}", inputBagParentName, outputBagRevision1.getParent().getFileName());
+        copyDirectory(inputBagDir.toFile(), outputBagRevision1.toFile());
+        new FileRemover(outputBagRevision1).removeFiles(new NoneNoneAndPlaceHolderFilter(placeHolders));
+
+        log.info("Creating revision 2: {} ### {}", inputBagParentName, outputBagRevision2.getParent().getFileName());
+        copyDirectory(outputBagRevision1.toFile(), outputBagRevision2.toFile());
 
         if (springfieldFiles.hasFilesToAdd()) {
-            springfieldFiles.checkFilesXmlContainsAllSpringfieldFileIdsFromSources(filesXml);
-            springfieldFiles.addFiles(placeHolders, revision2);
-            XmlUtil.writeFilesXml(revision2, filesXml);
-            updateManifests(updateBagVersion(revision2, revision1));
+            springfieldFiles.checkFilesXmlContainsAllSpringfieldFileIdsFromSources(outputBagRevision2);
+            springfieldFiles.addFiles(placeHolders, outputBagRevision2, outputBagRevision1);
+        }
+
+        // Move the bags to the output directory
+        moveFromStagingToOutputDir(outputBagRevision1);
+        createdBags++;
+        if (springfieldFiles.hasFilesToAdd()) {
+            moveFromStagingToOutputDir(outputBagRevision2);
             createdBags++;
         }
         processed++;
-
-        moveStaged(revision1);
-        if (springfieldFiles.hasFilesToAdd()) {
-            moveStaged(revision2);
-        }
         if (!keepInput) {
             FileUtils.deleteDirectory(inputBagDir.getParent().toFile());
         }
     }
 
-    private void moveStaged(Path bagDir) throws IOException {
+    private void moveFromStagingToOutputDir(Path bagDir) throws IOException {
         Path source = bagDir.getParent();
         Path destination = outputDir.resolve(source.getFileName());
         FileUtils.moveDirectory(source.toFile(), destination.toFile());
-    }
-
-    private static void replacePayloadFile(Path bagDir, Path source, String destination) throws IOException {
-        FileUtils.copyFile(
-            source.toFile(),
-            bagDir.resolve(destination).toFile(),
-            true
-        );
-    }
-
-    private static void removePayloadFile(Path bagDir, String destination) throws IOException {
-        Files.deleteIfExists(bagDir.resolve(destination));
     }
 }

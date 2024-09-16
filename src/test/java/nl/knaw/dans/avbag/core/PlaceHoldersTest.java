@@ -64,7 +64,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         createDirectories(filesXml.getParent());
         Files.write(filesXml, withPayload);
 
-        assertThatThrownBy(() -> new PlaceHolders(bagDir, XmlUtil.readXml(filesXml)))
+        assertThatThrownBy(() -> new PlaceHolders(bagDir))
             .isInstanceOf(NoSuchFileException.class)
             .hasMessage("target/test/PlaceHoldersTest/7bf09491-54b4-436e-7f59-1027f54cbb0c/bag/data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf");
     }
@@ -79,7 +79,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         createDirectories(bagDir.resolve("data"));
         Files.createFile(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"));
 
-        assertThatThrownBy(() -> new PlaceHolders(bagDir, XmlUtil.readXml(filesXml)))
+        assertThatThrownBy(() -> new PlaceHolders(bagDir))
             .isInstanceOf(NoSuchFileException.class)
             .hasMessage("target/test/PlaceHoldersTest/7bf09491-54b4-436e-7f59-1027f54cbb0c/bag/data/audio-video/GV_Demant_ingekwartierd_08.mp4");
     }
@@ -107,7 +107,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         captureStdout();
         ListAppender<ILoggingEvent> log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
 
-        new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        new PlaceHolders(bagDir);
 
         List<String> lines = log.list.stream()
             .map(ILoggingEvent::getFormattedMessage)
@@ -143,7 +143,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         captureStdout();
         ListAppender<ILoggingEvent> log = captureLog(Level.ERROR, PlaceHolders.class.getCanonicalName());
 
-        new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        new PlaceHolders(bagDir);
 
         List<String> lines = log.list.stream()
             .map(ILoggingEvent::getFormattedMessage)
@@ -167,7 +167,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         createDirectories(bagDir.resolve("data/audio-video"));
         Files.createFile(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"));
         Files.createFile(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
-        PlaceHolders placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        PlaceHolders placeHolders = new PlaceHolders(bagDir);
 
         assertThat(placeHolders.getDestPath("easy-file:6227174")).isEqualTo("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf");
     }
@@ -182,7 +182,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         createDirectories(bagDir.resolve("data/audio-video"));
         Files.write(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"), "content".getBytes(UTF_8));
         Files.createFile(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
-        PlaceHolders placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        PlaceHolders placeHolders = new PlaceHolders(bagDir);
 
         PseudoFileSources sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 
@@ -199,7 +199,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         createDirectories(bagDir.resolve("data/audio-video"));
         Files.createFile(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"));
         Files.createFile(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
-        PlaceHolders placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        PlaceHolders placeHolders = new PlaceHolders(bagDir);
 
         PseudoFileSources sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 
@@ -234,7 +234,7 @@ public class PlaceHoldersTest extends AbstractTestWithTestDir {
         createDirectories(bagDir.resolve("data/audio-video"));
         Files.createFile(bagDir.resolve("data/GV_CaleidoscoopFilm_ingekwartierd_08.pdf"));
         Files.createFile(bagDir.resolve("data/audio-video/GV_Demant_ingekwartierd_08.mp4"));
-        PlaceHolders placeHolders = new PlaceHolders(bagDir, XmlUtil.readXml(filesXml));
+        PlaceHolders placeHolders = new PlaceHolders(bagDir);
 
         PseudoFileSources sources = new PseudoFileSources(getPseudoFileSourcesConfig());
 

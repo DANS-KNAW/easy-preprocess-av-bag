@@ -118,7 +118,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void complains_about_not_existing_staging() throws Exception {
+    public void should_complain_about_non_existent_staging_dir() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         deleteDirectory(stagedBags.toFile());
 
@@ -128,7 +128,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void complains_about_content_in_staging() throws Exception {
+    public void should_complain_about_content_in_staging_dir() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         Files.createFile(stagedBags.resolve("some-file"));
 
@@ -138,15 +138,14 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void complains_about_already_converted_bag() throws Exception {
+    public void should_throw_if_bag_was_already_converted() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
         String uuid = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
         Files.createFile(convertedBags.resolve(uuid));
 
-        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
-
-        assertThat(loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage).collect(Collectors.toList()))
-            .contains(format("Skipped {0}, it exists in {1}", uuid, convertedBags));
+        assertThatThrownBy(() -> new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll())
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Output directory already exists: %s/%s", convertedBags, uuid);
     }
 
     @Test

@@ -62,7 +62,7 @@ public abstract class ManifestManager {
         // TODO Do the datasets have other big files?
         //  Then override visitFile and reuse values for paths not in fileIdToBagLocationMap.values().
         Set<Manifest> payLoadManifests = bag.getPayLoadManifests();
-        modifyPayloads(payLoadManifests);
+        modifyPayLoadManifests(payLoadManifests);
         ManifestWriter.writePayloadManifests(payLoadManifests, bagitDir, rootDir, fileEncoding);
 
         Set<Manifest> tagManifests = bag.getTagManifests();
@@ -103,7 +103,7 @@ public abstract class ManifestManager {
         };
     }
 
-    protected abstract void modifyPayloads(Set<Manifest> payLoadManifests) throws NoSuchAlgorithmException, IOException;
+    protected abstract void modifyPayLoadManifests(Set<Manifest> payLoadManifests) throws NoSuchAlgorithmException, IOException;
 
     private static void replaceManifests(Set<Manifest> payLoadManifests, Map<Manifest, MessageDigest> payloadFilesMap) {
         payLoadManifests.clear();
@@ -119,7 +119,7 @@ public abstract class ManifestManager {
         throws IOException, NoSuchAlgorithmException {
         new ManifestManager(bag) {
 
-            protected void modifyPayloads(Set<Manifest> payLoadManifests) throws NoSuchAlgorithmException, IOException {
+            protected void modifyPayLoadManifests(Set<Manifest> payLoadManifests) throws NoSuchAlgorithmException, IOException {
                 Map<Manifest, MessageDigest> payloadFilesMap = getManifestToDigestMap(payLoadManifests);
                 long beforeWalk = now().toNanoOfDay();
                 Path dataDir = bag.getRootDir().resolve("data");
@@ -145,22 +145,16 @@ public abstract class ManifestManager {
         }.updateTagAndPayloadManifests();
     }
 
-    public static void removePayloadsFromManifest(List<Path> filesWithNoneNone, Bag bag)
+    public static void removePayloadFilesFromManifests(List<Path> filesToRemove, Bag bag)
         throws IOException, NoSuchAlgorithmException {
         new ManifestManager(bag) {
 
             @Override
-            protected void modifyPayloads(Set<Manifest> payLoadManifests) {
-                payLoadManifests.forEach(this::removeNoneNone);
+            protected void modifyPayLoadManifests(Set<Manifest> payLoadManifests) {
+                payLoadManifests.forEach(manifest ->
+                    manifest.getFileToChecksumMap().keySet().removeIf(path -> filesToRemove.contains(bag.getRootDir().relativize(path))));
             }
 
-            private void removeNoneNone(Manifest manifest) {
-                manifest.getFileToChecksumMap().keySet().removeIf(this::isInNoneNone);
-            }
-
-            private boolean isInNoneNone(Path path) {
-                return filesWithNoneNone.contains(bag.getRootDir().relativize(path));
-            }
         }.updateTagAndPayloadManifests();
     }
 
