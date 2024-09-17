@@ -130,7 +130,6 @@ public class AVConverter {
         copyDirectory(outputBagRevision1.toFile(), outputBagRevision2.toFile());
 
         if (springfieldFiles.hasFilesToAdd()) {
-            springfieldFiles.checkFilesXmlContainsAllSpringfieldFileIdsFromSources(outputBagRevision2);
             springfieldFiles.addFiles(placeHolders, outputBagRevision2, outputBagRevision1);
         }
 

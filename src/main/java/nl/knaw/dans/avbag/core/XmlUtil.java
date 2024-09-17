@@ -109,4 +109,12 @@ public class XmlUtil {
             return e.getMessage();
         }
     }
+
+    public static void replaceElementTextContent(Document document, String tagName, String newTextContent) {
+        NodeList nodeList = document.getElementsByTagName(tagName);
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Node node = nodeList.item(i);
+            node.setTextContent(newTextContent);
+        }
+    }
 }

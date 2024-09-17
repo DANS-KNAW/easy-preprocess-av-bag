@@ -53,14 +53,14 @@ public class SpringfieldFiles {
         Document orgFilesXmlCopy = XmlUtil.readXml(bagDir.resolve("metadata/files.xml"));
         this.springfieldFiles = pseudoFileSources.getSpringFieldFiles(bagDir.getParent().getFileName().toString());
         filesInInputFilesXml = FileElements.read(orgFilesXmlCopy);
-    }
-
-    public void checkFilesXmlContainsAllSpringfieldFileIdsFromSources(Path modifiedBagDir) throws IOException, ParserConfigurationException, SAXException {
-        Document filesXml = XmlUtil.readXml(modifiedBagDir.resolve("metadata/files.xml"));
-        List<FileElement> newFileElements = FileElements.read(filesXml);
-        if (newFileElements.size() < springfieldFiles.size()) {
-            // adding the bagParent is of no use as the bag is not yet created
-            throw new IllegalStateException("Not all springfield files in sources.csv have matching easy-file ID in files.xml");
+        for (String easyFileId : springfieldFiles.keySet()) {
+            if (filesInInputFilesXml.stream().noneMatch(fileElement -> fileElement.getFileId().equals(easyFileId))) {
+                throw new IllegalStateException("Not all springfield files in sources.csv have matching easy-file ID in files.xml");
+            }
+        }
+        // If all files are NONE/NONE, raise an error
+        if (filesInInputFilesXml.stream().allMatch(fileElement -> fileElement.getAccessibleToRights().equals("NONE") && fileElement.getVisibleToRights().equals("NONE"))) {
+            throw new IllegalStateException("All files in files.xml have rights NONE/NONE");
         }
     }
 
@@ -75,9 +75,11 @@ public class SpringfieldFiles {
         List<Node> newFileList = new ArrayList<>();
         for (FileElement fileInInputFilesXml : filesInInputFilesXml) {
             String fileId = fileInInputFilesXml.getFileId();
-            String added = addPayloadFile(springfieldFiles.get(fileId), placeHolders.getDestPath(fileId), bagDir);
-            Element newFileElement = newFileElement(added, fileInInputFilesXml, newFilesXml);
-            newFileList.add(newFileElement);
+            if (springfieldFiles.get(fileId) != null) {
+                String added = addPayloadFile(springfieldFiles.get(fileId), placeHolders.getDestPath(fileId), bagDir);
+                Element newFileElement = newFileElement(added, fileInInputFilesXml, newFilesXml);
+                newFileList.add(newFileElement);
+            }
         }
         // separate loops to not interfere prematurely
         for (Node newFile : newFileList) {

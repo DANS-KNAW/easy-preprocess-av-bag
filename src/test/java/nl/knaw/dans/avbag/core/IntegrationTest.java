@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.w3c.dom.Document;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -167,10 +168,10 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         int numberOfInputBags = 5;
         int numberOfOutputBags = numberOfInputBags * 2;
-        assertThat(stdout.toString()).contains(String.format("processed=%d, failed=0, created=%d, doneBefore=0", numberOfInputBags, numberOfOutputBags));
+        assertThat(stdout.toString()).contains(String.format("processed=%d, failed=0, created=%d", numberOfInputBags, numberOfOutputBags));
     }
 
-//    @Test
+    @Test
     public void should_not_create_springfield_bags() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
 
@@ -188,11 +189,11 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         new AVConverter(mutableInput, convertedBags, stagedBags, pseudoFileSources).convertAll();
 
-        assertThat(stdout.toString()).contains("processed=5, failed=0, created=10, doneBefore=0");
+        assertThat(stdout.toString()).contains("processed=5, failed=0, created=10");
     }
 
     @Test
-    public void should_create_empty_bag_when_all_files_are_none_none() throws Exception {
+    public void should_fail_when_all_files_are_none_none() throws Exception {
         String bagParent = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
 
         FileUtils.copyDirectory(
@@ -200,125 +201,20 @@ public class IntegrationTest extends AbstractTestWithTestDir {
             mutableInput.resolve(bagParent).toFile()
         );
 
-        // removing all rights elements from files.xml defaults to None/None
-        Path filesXmlFile = mutableInput.resolve(bagParent + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
+        Path bagDir = mutableInput.resolve(bagParent).resolve("a5ad806e-d5c4-45e6-b434-f42324d4e097");
+        Path filesXmlFile = bagDir.resolve("metadata/files.xml");
 
-        // TODO: set NONE/NONE explicitly.
-        List<String> xmlLines = readAllLines(filesXmlFile).stream()
-            .filter(line -> !line.contains("ToRights"))
-            .collect(Collectors.toList());
-        Files.write(filesXmlFile, String.join("\n", xmlLines).getBytes(UTF_8));
-
-        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
-
-        List<String> logLines = loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage).collect(Collectors.toList());
-
-        // second bag aborted
-        ILoggingEvent last = loggedEvents.list.get(logLines.size() - 1);
-        assertThat(last.getFormattedMessage()).endsWith(bagParent + " failed, it may or may not have (incomplete) bags in target/test/IntegrationTest/staged-bags");
-        assertThat(last.getLevel()).isEqualTo(Level.ERROR);
-        assertThat(last.getThrowableProxy().getMessage()).endsWith("Not all springfield files in sources.csv have matching easy-file ID in files.xml");
-
-        Path bag = Files.list(stagedBags.resolve(bagParent)).collect(Collectors.toList()).get(0);
-        assertThat(bag.resolve("manifest-sha1.txt"))
-            .isEmptyFile();
-        assertThat(bag.resolve("data"))
-            .doesNotExist();
-    }
-
-    //@Test
-    public void reports_failing_bags_because_of_not_expected_exception() throws Exception {
-
-        FileUtils.copyDirectory(
-            integration.resolve("input-bags").toFile(),
-            mutableInput.toFile()
-        );
-
-        // second bag will fail when a none/none without dct:source does not exist
-
-        String bagParent1 = "89e54b08-5f1f-452c-a551-0d35f75a3939";
-        Path filesXmlFile1 = mutableInput.resolve(bagParent1 + "/dba86e2b-0665-4324-a401-3f5a24a7a2ab/metadata/files.xml");
-        List<String> xmlLines1 = readAllLines(filesXmlFile1).stream()
-            .filter(line -> !line.contains("dct:source"))
-            .collect(Collectors.toList());
-        Files.write(filesXmlFile1, String.join("\n", xmlLines1).getBytes(UTF_8));
-
-        // second bag will fail when a none/none without dct:source does not exist
-
-        String bagParent2 = "7bf09491-54b4-436e-7f59-1027f54cbb0c";
-        Files.delete(mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/data/original/bijlage Gb interviewer 08.pdf").toFile().toPath());
-        Path filesXmlFile2 = mutableInput.resolve(bagParent2 + "/a5ad806e-d5c4-45e6-b434-f42324d4e097/metadata/files.xml");
-        List<String> xmlLines2 = readAllLines(filesXmlFile2).stream()
-            .map(line -> !line.contains("visibleToRights") ? line : "<visibleToRights>NONE</visibleToRights>")
-            .collect(Collectors.toList());
-        Files.write(filesXmlFile2, String.join("\n", xmlLines2).getBytes(UTF_8));
-
-        // third bag will fail when visibleToRights is missing for a springfield file
-
-        String bagParent3 = "993ec2ee-b716-45c6-b9d1-7190f98a200a";
-        Path filesXmlFile3 = mutableInput.resolve(bagParent3 + "/e50fe0a3-554e-49a4-98f8-f4a32f19def9/metadata/files.xml");
-        List<String> xmlLines3 = readAllLines(filesXmlFile3).stream()
-            .filter(line -> !line.contains("visibleToRights"))
-            .collect(Collectors.toList());
-        Files.write(filesXmlFile3, String.join("\n", xmlLines3).getBytes(UTF_8));
-
-        // the test
+        Document filesXml = XmlUtil.readXml(filesXmlFile);
+        XmlUtil.replaceElementTextContent(filesXml, "accessibleToRights", "NONE");
+        XmlUtil.replaceElementTextContent(filesXml, "visibleToRights", "NONE");
+        XmlUtil.writeFilesXml(bagDir, filesXml);
 
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
-        // assert which bags succeeded
+        assertThat(loggedEvents.list)
+            .anyMatch(event -> event.getFormattedMessage().contains(String.format("%s failed, it may or may not have (incomplete) bags in target/test/IntegrationTest/staged-bags", bagParent)));
 
-        assertHasLogMessageStartingWith("Finished eaa");
-        assertHasLogMessageStartingWith("Finished 54c");
-        assertNoLogMessageStartingWith("Finished: " + bagParent1);
-        assertNoLogMessageStartingWith("Finished: " + bagParent2);
-        assertNoLogMessageStartingWith("Finished " + bagParent3);
-
-        // assert failure on first bag
-
-        assertNoLogMessageStartingWith("Creating revision 2: " + bagParent1);
-        assertHasLogMessageStartingWith(format("{0} files in PseudoFileSources but not having <dct:source> and length zero: [easy-file:7728890, easy-file:7728889, easy-file:7728888]", bagParent1));
-
-        // assert failure on second bag
-
-        assertHasLogMessageStartingWith("Creating revision 2: " + bagParent2);
-        assertNoLogMessageStartingWith("Creating revision 3: " + bagParent2);
-        IThrowableProxy bagEvent2 = getThrowableProxyWithLogMessageEqualTo(format(
-            "{0} failed, it may or may not have (incomplete) bags in {1}", bagParent2, stagedBags
-        ));
-        assertThat(bagEvent2.getClassName()).isEqualTo(IOException.class.getCanonicalName());
-        assertThat(bagEvent2.getMessage()).endsWith("interviewer 08.pdf");
-
-        // assert failure on third bag
-
-        assertHasLogMessageStartingWith("Creating revision 3: " + bagParent3);
-        IThrowableProxy bagEvent3 = getThrowableProxyWithLogMessageEqualTo(format(
-            "{0} failed, it may or may not have (incomplete) bags in {1}", bagParent3, stagedBags
-        ));
-        assertThat(bagEvent3.getMessage()).isEqualTo("Cannot invoke \"org.w3c.dom.Element.getTagName()\" because \"oldRights\" is null"
-        );
-    }
-
-    private IThrowableProxy getThrowableProxyWithLogMessageEqualTo(String msg) {
-        return loggedEvents.list.stream().filter(e ->
-                e.getFormattedMessage().equals(msg)
-            ).map(ILoggingEvent::getThrowableProxy)
-            .findFirst().orElseThrow(() -> new AssertionError("no message found equal to: " + msg));
-    }
-
-    private void assertHasLogMessageStartingWith(String msg) {
-        assertThat(loggedEvents.list.stream().map(ILoggingEvent::getFormattedMessage))
-            .anyMatch(s -> s.startsWith(msg));
-    }
-
-    private void assertNoLogMessageStartingWith(String msg) {
-        boolean hasMessage = loggedEvents.list.stream()
-            .map(ILoggingEvent::getFormattedMessage)
-            .anyMatch(s -> s.startsWith(msg));
-
-        if (hasMessage) {
-            throw new AssertionError("Should not have found a log message found starting with: " + msg);
-        }
+        assertThat(stdout.toString()).contains("processed=0, failed=1, created=0");
     }
 
     private PseudoFileSources getPseudoFileSources() throws IOException {
