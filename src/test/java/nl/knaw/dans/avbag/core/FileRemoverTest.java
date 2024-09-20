@@ -65,7 +65,7 @@ public class FileRemoverTest extends AbstractTestWithTestDir {
         // When / Then
         FileRemover remover = new FileRemover(bagDir);
         assertThatThrownBy(() -> remover
-            .removeFiles(new NoneNoneAndPlaceHolderFilter(new PlaceHolders(bagDir)))
+            .removeFiles(element -> true)
         ).isInstanceOf(IOException.class)
             .hasMessage("1234: Could not delete %s/data/some.txt", bagDir);
     }
@@ -77,6 +77,10 @@ public class FileRemoverTest extends AbstractTestWithTestDir {
         createDirectories(bagDir);
         Files.createFile(bagDir.resolve("some.txt"));
         Files.createFile(bagDir.resolve("some2.txt"));
+        Files.createFile(bagDir.resolve("another.txt"));
+        Files.write(bagDir.resolve("another.txt"), "NOT EMPTY, SO NO REMOVED".getBytes(UTF_8));
+        Files.createFile(bagDir.resolve("a-third.txt"));
+        Files.write(bagDir.resolve("a-third.txt"), "NOT EMPTY, SO NO REMOVED".getBytes(UTF_8));
         Bag bag = BagCreator.bagInPlace(bagDir, Collections.singletonList(StandardSupportedAlgorithms.SHA1), false);
         Path filesXml = bagDir.resolve("metadata/files.xml");
         createDirectories(filesXml.getParent());

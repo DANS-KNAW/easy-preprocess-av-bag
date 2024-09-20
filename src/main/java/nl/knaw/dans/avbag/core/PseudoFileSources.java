@@ -89,8 +89,8 @@ public class PseudoFileSources {
             .flatMap(innerMap -> innerMap.values().stream())
             .map(darkArchiveDir::resolve)
             .filter(path -> !Files.exists(path)).collect(Collectors.toList());
-        if (!notExistingSpringfield.isEmpty() || !notExistingAV.isEmpty()) {
-            throw new IOException("Not existing files: " + notExistingSpringfield + " " + notExistingAV);
+        if (!notExistingSpringfield.isEmpty()) {
+            throw new IOException("Not existing files: " + notExistingSpringfield);
         }
     }
 

@@ -46,7 +46,7 @@ public class PlaceHolders {
     private final Map<String, Path> identifierToDestMap = new HashMap<>();
 
     /**
-     * @param bagDir   the directory of the bag
+     * @param bagDir the directory of the bag
      * @throws IOException if the files.xml document cannot be read
      */
     public PlaceHolders(Path bagDir) throws IOException, ParserConfigurationException, SAXException, TransformerException {
@@ -90,23 +90,26 @@ public class PlaceHolders {
         NodeList fileNodes = filesXml.getElementsByTagName("file");
         for (int i = 0; i < fileNodes.getLength(); i++) {
             Element fileElement = (Element) fileNodes.item(i);
-            NodeList sourceNode = fileElement.getElementsByTagName("dct:source");
-            if (sourceNode.getLength() > 0) {
-                NodeList identifierNodes = fileElement.getElementsByTagName("dct:identifier");
-                if (identifierNodes.getLength() == 0) {
-                    log.error("No <dct:identifier> found: {} {}", bagParent, XmlUtil.serializeNode(fileElement));
+            NodeList identifierNodes = fileElement.getElementsByTagName("dct:identifier");
+            if (identifierNodes.getLength() == 0) {
+                log.error("No <dct:identifier> found: {} {}", bagParent, XmlUtil.serializeNode(fileElement));
+            }
+            else {
+                String filePath = fileElement.getAttribute("filepath");
+                if (isEmpty(filePath)) {
+                    log.error("No filepath attribute found: {} {}", bagParent, XmlUtil.serializeNode(fileElement));
                 }
-                else {
-                    String filePath = fileElement.getAttribute("filepath");
-                    if (isEmpty(filePath)) {
-                        log.error("No filepath attribute found: {} {}", bagParent, XmlUtil.serializeNode(fileElement));
+                else if (0 == Files.size(bagDir.resolve(filePath))) {
+                    String identifier = identifierNodes.item(0).getTextContent();
+                    identifierToDestMap.put(identifier, Paths.get(filePath));
+                    NodeList sourceNode = fileElement.getElementsByTagName("dct:source");
+                    if (sourceNode.getLength() > 0) { // Has a <dct:source> child element
+                        fileElement.removeChild(sourceNode.item(0));
                     }
-                    else if (0 == Files.size(bagDir.resolve(filePath))) {
-                        String identifier = identifierNodes.item(0).getTextContent();
-                        identifierToDestMap.put(identifier, Paths.get(filePath));
+                    else {
+                        log.warn("Expected <dct:source> element on empty file, but not found: {} {}", bagParent, XmlUtil.serializeNode(fileElement));
                     }
                 }
-                fileElement.removeChild(sourceNode.item(0));
             }
         }
     }
