@@ -125,7 +125,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         assertThatThrownBy(() -> new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll())
             .isInstanceOf(NoSuchFileException.class)
-            .hasMessage("target/test/IntegrationTest/staged-bags");
+            .hasMessageEndingWith("target/test/IntegrationTest/staged-bags");
     }
 
     @Test
@@ -146,7 +146,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
 
         assertThatThrownBy(() -> new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll())
             .isInstanceOf(IllegalStateException.class)
-            .hasMessage("Output directory already exists: %s/%s", convertedBags, uuid);
+            .hasMessage("Output directory already exists: %s/%s", convertedBags.toAbsolutePath(), uuid);
     }
 
     @Test
@@ -154,7 +154,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
 
         ByteArrayOutputStream stdout = captureStdout();
-        new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
+        new AVConverter(mutableInput.toAbsolutePath(), convertedBags.toAbsolutePath(), stagedBags, getPseudoFileSources()).convertAll();
 
         assertThat(mutableInput).isEmptyDirectory();
         assertThat(stagedBags).isEmptyDirectory();
@@ -172,7 +172,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
     }
 
     @Test
-    public void should_not_create_springfield_bags() throws Exception {
+    public void should_not_create_springfield_bags_if_no_path_in_springfield_dir_present() throws Exception {
         FileUtils.copyDirectory(inputBags.toFile(), mutableInput.toFile());
 
         List<String> lines = readAllLines(integration.resolve("sources.csv")).stream()
@@ -212,7 +212,7 @@ public class IntegrationTest extends AbstractTestWithTestDir {
         new AVConverter(mutableInput, convertedBags, stagedBags, getPseudoFileSources()).convertAll();
 
         assertThat(loggedEvents.list)
-            .anyMatch(event -> event.getFormattedMessage().contains(String.format("%s failed, it may or may not have (incomplete) bags in target/test/IntegrationTest/staged-bags", bagParent)));
+            .anyMatch(event -> event.getFormattedMessage().contains(String.format("%s failed, it may or may not have (incomplete) bags in %s/staged-bags", bagParent, testDir.toAbsolutePath())));
 
         assertThat(stdout.toString()).contains("processed=0, failed=1, created=0");
     }

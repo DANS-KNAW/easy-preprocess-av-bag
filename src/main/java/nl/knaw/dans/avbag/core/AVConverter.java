@@ -39,7 +39,6 @@ import static java.text.MessageFormat.format;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 
 @Slf4j
-@RequiredArgsConstructor
 public class AVConverter {
     @NonNull
     private final Path inputDir;
@@ -55,7 +54,15 @@ public class AVConverter {
     private long createdBags = 0L;
     private long failedBags = 0L;
 
-    AVConverter(Path inputDir, Path outputDir, Path stagingDir, PseudoFileSources pseudoFileSources) {
+    public AVConverter(Path inputDir, Path outputDir, Path stagingDir, PseudoFileSources pseudoFileSources, boolean keepInput) {
+        this.inputDir = inputDir.toAbsolutePath();
+        this.outputDir = outputDir.toAbsolutePath();
+        this.stagingDir = stagingDir.toAbsolutePath();
+        this.pseudoFileSources = pseudoFileSources;
+        this.keepInput = keepInput;
+    }
+
+    public AVConverter(Path inputDir, Path outputDir, Path stagingDir, PseudoFileSources pseudoFileSources) {
         this(inputDir, outputDir, stagingDir, pseudoFileSources, false);
     }
 
@@ -89,7 +96,7 @@ public class AVConverter {
     }
 
     private boolean notSelfOrChild(Path path) {
-        return !path.getParent().equals(inputDir) && !path.equals(inputDir);
+        return !path.toAbsolutePath().getParent().equals(inputDir) && !path.equals(inputDir);
     }
 
     private void convertOne(Path inputBag) {

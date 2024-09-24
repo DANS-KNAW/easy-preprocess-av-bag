@@ -48,7 +48,7 @@ public class ConvertCommand implements Callable<Integer> {
                             description = "The directory where the converted dataset will be stored.")
     private Path outputDir;
 
-    @Option(names = "--keep-input, -k",
+    @Option(names = {"--keep-input", "-k"},
             description = "Keep the input files after conversion.")
     private boolean keepInput;
 
@@ -60,7 +60,7 @@ public class ConvertCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         try {
-            new AVConverter(inputDir, outputDir, stagingDir, new PseudoFileSources(config), keepInput)
+            new AVConverter(inputDir.toAbsolutePath(), outputDir.toAbsolutePath(), stagingDir.toAbsolutePath(), new PseudoFileSources(config), keepInput)
                 .convertAll();
         }
         catch (Exception e) {
